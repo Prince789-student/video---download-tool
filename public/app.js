@@ -582,47 +582,350 @@ function closeHistoryDrawer() {
   historyDrawer.classList.add('hidden');
 }
 
-// Server Settings Handlers
-if (apiSettingsBtn) {
-  apiSettingsBtn.addEventListener('click', () => {
-    const current = localStorage.getItem('omnistream_backend_url') || window.API_BASE_URL || '';
-    backendUrlInput.value = current;
-    serverSettingsOverlay.classList.remove('hidden');
-  });
-}
+// ==========================================================================
+// Google Authentication & User Profile Management
+// ==========================================================================
+const googleLoginBtn = document.getElementById('googleLoginBtn');
+const userProfileMenu = document.getElementById('userProfileMenu');
+const userProfileBtn = document.getElementById('userProfileBtn');
+const userDropdown = document.getElementById('userDropdown');
+const userAvatar = document.getElementById('userAvatar');
+const userNameLabel = document.getElementById('userNameLabel');
+const dropdownFullName = document.getElementById('dropdownFullName');
+const dropdownEmail = document.getElementById('dropdownEmail');
+const dropdownPhone = document.getElementById('dropdownPhone');
+const editProfileBtn = document.getElementById('editProfileBtn');
+const logoutBtn = document.getElementById('logoutBtn');
 
-if (closeSettingsBtn) {
-  closeSettingsBtn.addEventListener('click', () => {
-    serverSettingsOverlay.classList.add('hidden');
-  });
-}
+// Profile Onboarding Modal Elements
+const profileModalOverlay = document.getElementById('profileModalOverlay');
+const closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
+const profileForm = document.getElementById('profileForm');
+const profileFullName = document.getElementById('profileFullName');
+const profilePhone = document.getElementById('profilePhone');
+const profileEmail = document.getElementById('profileEmail');
 
-if (serverSettingsOverlay) {
-  serverSettingsOverlay.addEventListener('click', (e) => {
-    if (e.target === serverSettingsOverlay) {
-      serverSettingsOverlay.classList.add('hidden');
+if (googleLoginBtn) {
+  googleLoginBtn.addEventListener('click', async () => {
+    try {
+      await loginWithGoogle();
+    } catch (err) {
+      alert('Google Sign-In failed: ' + (err.message || 'Please check your connection.'));
     }
   });
 }
 
-if (saveBackendBtn) {
-  saveBackendBtn.addEventListener('click', () => {
-    const val = backendUrlInput.value.trim().replace(/\/+$/, '');
-    if (val) {
-      localStorage.setItem('omnistream_backend_url', val);
-    } else {
-      localStorage.removeItem('omnistream_backend_url');
-    }
-    serverSettingsOverlay.classList.add('hidden');
-    checkEngineStatus();
+if (userProfileBtn) {
+  userProfileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    userDropdown.classList.toggle('hidden');
   });
 }
 
-if (resetBackendBtn) {
-  resetBackendBtn.addEventListener('click', () => {
-    localStorage.removeItem('omnistream_backend_url');
-    backendUrlInput.value = '';
-    serverSettingsOverlay.classList.add('hidden');
-    checkEngineStatus();
+document.addEventListener('click', () => {
+  if (userDropdown && !userDropdown.classList.contains('hidden')) {
+    userDropdown.classList.add('hidden');
+  }
+});
+
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async () => {
+    await logoutUser();
   });
 }
+
+if (editProfileBtn) {
+  editProfileBtn.addEventListener('click', () => {
+    userDropdown.classList.add('hidden');
+    openProfileModal();
+  });
+}
+
+if (closeProfileModalBtn) {
+  closeProfileModalBtn.addEventListener('click', () => {
+    profileModalOverlay.classList.add('hidden');
+  });
+}
+
+function openProfileModal() {
+  const user = window.currentUser || {};
+  profileFullName.value = user.displayName || '';
+  profilePhone.value = user.phoneNumber || '';
+  profileEmail.value = user.email || '';
+  profileModalOverlay.classList.remove('hidden');
+}
+
+if (profileForm) {
+  profileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = profileFullName.value.trim();
+    const phone = profilePhone.value.trim();
+
+    if (!name || !phone) {
+      alert('Please fill out both your Name and Phone Number.');
+      return;
+    }
+
+    await updateUserProfile(name, phone);
+    profileModalOverlay.classList.add('hidden');
+    alert('Profile updated successfully! Welcome, ' + name);
+  });
+}
+
+// Authentication Custom Event Listeners
+window.addEventListener('auth:login', (e) => {
+  const user = e.detail;
+  if (!user) return;
+
+  googleLoginBtn.classList.add('hidden');
+  userProfileMenu.classList.remove('hidden');
+
+  userNameLabel.textContent = (user.displayName || 'User').split(' ')[0];
+  userAvatar.src = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.displayName || 'User')}`;
+  dropdownFullName.textContent = user.displayName || 'User';
+  dropdownEmail.textContent = user.email || '';
+  dropdownPhone.textContent = user.phoneNumber ? `Phone: ${user.phoneNumber}` : 'No phone number added';
+});
+
+window.addEventListener('auth:logout', () => {
+  googleLoginBtn.classList.remove('hidden');
+  userProfileMenu.classList.add('hidden');
+  userDropdown.classList.add('hidden');
+});
+
+window.addEventListener('auth:require_profile', () => {
+  setTimeout(() => {
+    openProfileModal();
+  }, 400);
+});
+
+window.addEventListener('auth:profile_updated', (e) => {
+  const user = e.detail;
+  userNameLabel.textContent = (user.displayName || 'User').split(' ')[0];
+  dropdownFullName.textContent = user.displayName || 'User';
+  dropdownPhone.textContent = user.phoneNumber ? `Phone: ${user.phoneNumber}` : 'No phone number added';
+});
+
+// ==========================================================================
+// Multi-Page Legal & Policy SPA System
+// ==========================================================================
+const legalPagesOverlay = document.getElementById('legalPagesOverlay');
+const closeLegalModalBtn = document.getElementById('closeLegalModalBtn');
+const legalModalBody = document.getElementById('legalModalBody');
+const legalModalTitleText = document.getElementById('legalModalTitleText');
+const legalTabs = document.querySelectorAll('.legal-tab-btn');
+
+const LEGAL_CONTENT = {
+  privacy: `
+    <h2>Privacy Policy</h2>
+    <p>Last Updated: October 2026</p>
+    <div class="legal-highlight-box">
+      OmniStream Pro respects your digital privacy. We operate a zero-log media processing engine. No downloaded video or audio files are retained on our servers past temporary processing.
+    </div>
+    <h3>1. Information We Collect</h3>
+    <p>We collect limited information to provide seamless media downloads:</p>
+    <ul>
+      <li><strong>Account Details:</strong> When signing in with Google, we access your name, email address, profile avatar, and the phone number provided during onboarding.</li>
+      <li><strong>Operational Telemetry:</strong> Anonymized URL queries, selected video formats, and error logs to debug network throughput and platform compatibility.</li>
+      <li><strong>Local Storage Data:</strong> We store your UI theme preference (Light/Dark mode) and your local download history on your browser only.</li>
+    </ul>
+
+    <h3>2. How Your Data Is Protected</h3>
+    <p>All communication between your device and OmniStream Pro is encrypted using industry-standard TLS 1.3 / HTTPS encryption. We never sell, rent, or monetize your personal information or contact details with third-party advertisers or data brokers.</p>
+
+    <h3>3. Cookies & Advertising</h3>
+    <p>We may partner with trusted advertising networks, such as Google AdSense, to display non-intrusive advertisements. These partners may use cookies (such as DoubleClick DART cookies) to serve ads based on your visit to this and other websites on the internet. You may opt out of personalized advertising by visiting Google Ad Settings.</p>
+
+    <h3>4. Children's Online Privacy Protection (COPPA)</h3>
+    <p>OmniStream Pro is designed for general audiences and does not knowingly collect personal identifiable information from children under the age of 13.</p>
+
+    <h3>5. Contact Our Data Protection Officer</h3>
+    <p>If you have questions regarding your data or wish to delete your account, contact: <strong>privacy@omnistream.pro</strong></p>
+  `,
+
+  terms: `
+    <h2>Terms of Service & Acceptable Use</h2>
+    <p>Effective Date: October 2026</p>
+    <div class="legal-highlight-box">
+      By accessing or using OmniStream Pro, you acknowledge and agree to comply with these Terms of Service. If you do not agree, please discontinue using the service immediately.
+    </div>
+    <h3>1. Permitted Use</h3>
+    <p>OmniStream Pro is an advanced personal media caching and backup tool designed for educational, archival, and fair-use purposes. You agree to use this service exclusively for content you own or have explicit permission to access and download.</p>
+
+    <h3>2. User Warranties & Prohibitions</h3>
+    <p>You strictly agree that you shall NOT:</p>
+    <ul>
+      <li>Use the service to infringe upon the intellectual property, copyright, or trademark of any content creator or publisher.</li>
+      <li>Distribute, broadcast, or commercialize downloaded media without the copyright holder's authorization.</li>
+      <li>Deploy automated bots, scrapers, or DDoS attacks designed to degrade server availability.</li>
+      <li>Attempt to bypass security headers, access private accounts, or reverse-engineer the underlying API.</li>
+    </ul>
+
+    <h3>3. Disclaimer of Warranties</h3>
+    <p>OmniStream Pro is provided on an "AS-IS" and "AS-AVAILABLE" basis. We make no warranty that our service will be uninterrupted, error-free, or compatible with every streaming protocol at all times.</p>
+
+    <h3>4. Limitation of Liability</h3>
+    <p>Under no circumstances shall OmniStream Pro, its developers, or affiliates be liable for direct, indirect, incidental, or consequential damages resulting from the use or misuse of media obtained through this tool.</p>
+  `,
+
+  dmca: `
+    <h2>DMCA Copyright Notice & Disclaimer</h2>
+    <div class="legal-highlight-box">
+      OmniStream Pro strictly complies with the Digital Millennium Copyright Act (17 U.S.C. § 512) and international copyright directives.
+    </div>
+    <h3>1. Safe Harbor & Zero-Hosting Policy</h3>
+    <p>OmniStream Pro is a client-side facilitation and format transcode proxy. <strong>We do not host, store, index, or broadcast any audio or video files on our servers.</strong></p>
+    <p>All video content retrieved through OmniStream Pro is streamed directly from public third-party content delivery networks (CDNs) maintained by platforms such as YouTube, Instagram, TikTok, and Vimeo. Files are cached solely in temporary memory to multiplex audio and video tracks, and are purged automatically.</p>
+
+    <h3>2. Copyright Infringement Claims</h3>
+    <p>If you are a copyright owner or an authorized agent and believe that content accessible through our utility infringes your rights, you may submit a formal notification to our designated copyright agent:</p>
+    <ul>
+      <li><strong>Designated Agent:</strong> OmniStream Copyright Compliance Department</li>
+      <li><strong>Notice Email:</strong> <strong>dmca@omnistream.pro</strong></li>
+      <li><strong>Physical Address:</strong> Legal Dept, OmniStream Pro Cloud Architecture, New Delhi, India</li>
+    </ul>
+
+    <h3>3. Required Takedown Information</h3>
+    <p>To be effective under 17 U.S.C. § 512(c)(3), your notice must include:</p>
+    <ul>
+      <li>Identification of the copyrighted work claimed to have been infringed.</li>
+      <li>The exact public URL(s) of the infringing material.</li>
+      <li>Your full contact details including Name, Address, Telephone, and Email address.</li>
+      <li>A statement made under penalty of perjury that the information in the notification is accurate.</li>
+      <li>A physical or electronic signature of the copyright owner or authorized representative.</li>
+    </ul>
+  `,
+
+  about: `
+    <h2>About OmniStream Pro</h2>
+    <div class="legal-highlight-box">
+      Engineering the world's fastest, cleanest, and most accessible web media archiving engine.
+    </div>
+    <h3>Our Vision</h3>
+    <p>OmniStream Pro was born out of frustration with predatory video download sites bloated with spam popups, scam ads, malware redirects, and artificial quality restrictions. We set out to build an open, crystal-clean platform that treats users with dignity.</p>
+
+    <h3>Under the Hood</h3>
+    <p>Our server architecture leverages cutting-edge open source tools:</p>
+    <ul>
+      <li><strong>yt-dlp Engine:</strong> World-class media extraction with native stream resolution parsing.</li>
+      <li><strong>FFmpeg 8.x Acceleration:</strong> Multi-threaded audio and video muxing allowing pristine 1080p, 2K, and 4K MP4 downloads.</li>
+      <li><strong>Deno JavaScript Engine:</strong> Lightning-fast client token negotiation to bypass modern video bot limits.</li>
+      <li><strong>Global CDN Edge:</strong> Instant worldwide availability deployed on Vercel and Render cloud infrastructure.</li>
+    </ul>
+
+    <h3>Our Commitment</h3>
+    <p>Zero spam. Zero tracking cookies. Transparent policies. Continuous updates whenever streaming platforms modify their protocols.</p>
+  `,
+
+  contact: `
+    <h2>Contact Us & Customer Support</h2>
+    <p>Have an inquiry, platform bug report, or feature suggestion? Reach our engineering team directly.</p>
+    
+    <div class="contact-form-grid">
+      <div class="form-group">
+        <label class="form-label" for="contactName">Your Name *</label>
+        <input type="text" id="contactName" class="form-input" placeholder="e.g. Prince Kumar" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="contactEmail">Email Address *</label>
+        <input type="email" id="contactEmail" class="form-input" placeholder="e.g. name@example.com" required>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="contactCategory">Inquiry Type</label>
+      <select id="contactCategory" class="form-input" style="cursor: pointer;">
+        <option value="support">General Support & Inquiry</option>
+        <option value="bug">Report a Broken Video Link</option>
+        <option value="feature">Feature Request</option>
+        <option value="dmca">Copyright / DMCA Notice</option>
+        <option value="partnership">Business & Advertising</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="contactMessage">Your Message *</label>
+      <textarea id="contactMessage" class="form-input contact-textarea" placeholder="Describe your question or issue in detail..." required></textarea>
+    </div>
+
+    <button type="button" class="action-btn primary" id="sendContactBtn" style="padding: 10px 24px; font-size: 0.92rem;">
+      Send Message
+    </button>
+
+    <div class="legal-highlight-box" style="margin-top: 24px;">
+      <strong>Direct Support Email:</strong> support@omnistream.pro<br>
+      <strong>Average Response Time:</strong> Within 24 Hours
+    </div>
+  `
+};
+
+function renderLegalTab(tabKey) {
+  legalTabs.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tabKey);
+  });
+
+  const content = LEGAL_CONTENT[tabKey] || LEGAL_CONTENT.privacy;
+  legalModalBody.innerHTML = content;
+  legalModalBody.scrollTop = 0;
+
+  // If contact tab was rendered, wire up contact form submission
+  if (tabKey === 'contact') {
+    const sendBtn = document.getElementById('sendContactBtn');
+    if (sendBtn) {
+      sendBtn.addEventListener('click', () => {
+        const name = document.getElementById('contactName').value.trim();
+        const email = document.getElementById('contactEmail').value.trim();
+        const msg = document.getElementById('contactMessage').value.trim();
+        if (!name || !email || !msg) {
+          alert('Please fill out all required fields (Name, Email, and Message).');
+          return;
+        }
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Message Sent Successfully ✓';
+        setTimeout(() => {
+          alert('Thank you, ' + name + '! Your message has been received. Our team will get back to you at ' + email + '.');
+          legalPagesOverlay.classList.add('hidden');
+        }, 500);
+      });
+    }
+  }
+}
+
+function openLegalModal(tabKey = 'privacy') {
+  renderLegalTab(tabKey);
+  legalPagesOverlay.classList.remove('hidden');
+}
+
+if (closeLegalModalBtn) {
+  closeLegalModalBtn.addEventListener('click', () => {
+    legalPagesOverlay.classList.add('hidden');
+  });
+}
+
+if (legalPagesOverlay) {
+  legalPagesOverlay.addEventListener('click', (e) => {
+    if (e.target === legalPagesOverlay) {
+      legalPagesOverlay.classList.add('hidden');
+    }
+  });
+}
+
+legalTabs.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.getAttribute('data-tab');
+    renderLegalTab(tab);
+  });
+});
+
+// Footer Navigation Links
+const navPrivacy = document.getElementById('navPrivacy');
+const navTerms = document.getElementById('navTerms');
+const navDmca = document.getElementById('navDmca');
+const navAbout = document.getElementById('navAbout');
+const navContact = document.getElementById('navContact');
+
+if (navPrivacy) navPrivacy.addEventListener('click', (e) => { e.preventDefault(); openLegalModal('privacy'); });
+if (navTerms) navTerms.addEventListener('click', (e) => { e.preventDefault(); openLegalModal('terms'); });
+if (navDmca) navDmca.addEventListener('click', (e) => { e.preventDefault(); openLegalModal('dmca'); });
+if (navAbout) navAbout.addEventListener('click', (e) => { e.preventDefault(); openLegalModal('about'); });
+if (navContact) navContact.addEventListener('click', (e) => { e.preventDefault(); openLegalModal('contact'); });

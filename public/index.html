@@ -58,14 +58,44 @@
           <span class="theme-label" id="themeLabel">Dark Mode</span>
         </button>
 
-        <!-- Backend Server Settings Button -->
-        <button class="nav-btn" id="apiSettingsBtn" title="Backend Server Settings">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-          <span>Server</span>
-        </button>
+        <!-- Google Authentication View -->
+        <div class="auth-header-wrap" id="authHeaderWrap">
+          <!-- Logged Out State -->
+          <button class="google-login-btn" id="googleLoginBtn" title="Sign in with Google">
+            <svg class="google-icon" width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.87c2.26-2.09 3.67-5.17 3.67-9.15z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3.05c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.73-4.96H1.25v3.15C3.25 21.36 7.35 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.25C.45 8.22 0 10.06 0 12s.45 3.78 1.25 5.39l4.02-3.15z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.25 2.64 1.25 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+            </svg>
+            <span>Sign In</span>
+          </button>
+
+          <!-- Logged In State (Hidden by default) -->
+          <div class="user-profile-menu hidden" id="userProfileMenu">
+            <button class="user-profile-btn" id="userProfileBtn">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=User" alt="Avatar" class="user-avatar" id="userAvatar">
+              <span class="user-name" id="userNameLabel">User</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="user-dropdown hidden" id="userDropdown">
+              <div class="user-dropdown-header">
+                <strong id="dropdownFullName">User</strong>
+                <span id="dropdownEmail">user@email.com</span>
+                <span class="user-phone-tag" id="dropdownPhone">No phone added</span>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="editProfileBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                <span>Edit Name & Phone</span>
+              </button>
+              <button class="dropdown-item danger" id="logoutBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
         <!-- History Button -->
         <button class="nav-btn" id="historyNavBtn" title="View Download History">
@@ -418,47 +448,108 @@
     <div class="footer-container">
       <div class="footer-left">
         <span class="footer-brand">OmniStream Pro</span>
-        <span class="footer-copy">© 2026 • Local Media Engineering Tool. Built for educational and personal media archiving.</span>
+        <span class="footer-copy">© 2026 • Universal Media Engineering Tool. Built for educational and personal archiving.</span>
       </div>
+
+      <!-- Legal & Policy Navigation Links -->
+      <nav class="footer-nav-links">
+        <a href="#privacy" class="footer-nav-link" id="navPrivacy">Privacy Policy</a>
+        <a href="#terms" class="footer-nav-link" id="navTerms">Terms of Service</a>
+        <a href="#dmca" class="footer-nav-link" id="navDmca">DMCA Disclaimer</a>
+        <a href="#about" class="footer-nav-link" id="navAbout">About Us</a>
+        <a href="#contact" class="footer-nav-link" id="navContact">Contact Support</a>
+      </nav>
+
       <div class="footer-right">
         <span class="status-pill-small">Status: Fast & Online</span>
       </div>
-    <!-- Server Settings Modal -->
-    <div class="progress-overlay hidden" id="serverSettingsOverlay">
-      <div class="progress-modal" style="max-width: 500px;">
-        <div class="modal-header">
-          <div class="modal-title-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-            <h3>Backend Server Settings</h3>
-          </div>
-          <button class="modal-close-btn" id="closeSettingsBtn" title="Close modal">&times;</button>
-        </div>
+    </div>
+  </footer>
 
-        <div style="padding: 1.25rem 0;">
-          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.5;">
-            Connect your Vercel frontend to your Render backend web service. Leave blank when running locally on localhost.
-          </p>
-          <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-primary);">
-            Render Backend API URL
-          </label>
-          <input 
-            type="url" 
-            id="backendUrlInput" 
-            placeholder="https://omnistream-downloader-api.onrender.com"
-            style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-card); color: var(--text-primary); font-size: 0.95rem; margin-bottom: 1.25rem; box-sizing: border-box;"
-          />
-          <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-            <button type="button" class="action-btn secondary" id="resetBackendBtn" style="padding: 0.6rem 1rem; font-size: 0.85rem;">Reset Default</button>
-            <button type="button" class="action-btn primary" id="saveBackendBtn" style="padding: 0.6rem 1.25rem; font-size: 0.85rem;">Save & Connect</button>
-          </div>
+  <!-- Complete Profile / Onboarding Modal (Phone Number & Name) -->
+  <div class="progress-overlay hidden" id="profileModalOverlay">
+    <div class="progress-modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <h3>Complete Your Profile</h3>
         </div>
+        <button class="modal-close-btn" id="closeProfileModalBtn">&times;</button>
+      </div>
+
+      <div style="padding: 1.25rem 0 0.5rem;">
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.2rem; line-height: 1.5;">
+          Please confirm your details to enable unlimited media downloads and save your history securely.
+        </p>
+
+        <form id="profileForm">
+          <div class="form-group">
+            <label class="form-label" for="profileFullName">Full Name *</label>
+            <input type="text" id="profileFullName" class="form-input" placeholder="e.g. Prince Kumar" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="profilePhone">Phone / WhatsApp Number *</label>
+            <input type="tel" id="profilePhone" class="form-input" placeholder="e.g. +91 9876543210" required>
+            <div class="form-hint">Used for account recovery and customer support updates.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="profileEmail">Google Account Email</label>
+            <input type="email" id="profileEmail" class="form-input" readonly style="opacity: 0.75; cursor: not-allowed;">
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button type="submit" class="action-btn primary" id="saveProfileBtn" style="padding: 0.75rem 1.75rem; font-size: 0.92rem; width: 100%; justify-content: center;">
+              Save & Continue
+            </button>
+          </div>
+        </form>
       </div>
     </div>
+  </div>
 
-    <script src="config.js?v=2.1"></script>
-    <script src="app.js?v=2.1"></script>
-  </body>
+  <!-- Multi-Page Legal & Policy SPA Modal -->
+  <div class="progress-overlay hidden" id="legalPagesOverlay">
+    <div class="legal-modal-wrap">
+      <div class="legal-modal-header">
+        <h3 id="legalModalMainTitle" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          <span id="legalModalTitleText">Legal & Company Information</span>
+        </h3>
+        <button class="modal-close-btn" id="closeLegalModalBtn">&times;</button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="legal-tabs">
+        <button class="legal-tab-btn active" data-tab="privacy">Privacy Policy</button>
+        <button class="legal-tab-btn" data-tab="terms">Terms of Service</button>
+        <button class="legal-tab-btn" data-tab="dmca">DMCA & Copyright</button>
+        <button class="legal-tab-btn" data-tab="about">About Us</button>
+        <button class="legal-tab-btn" data-tab="contact">Contact & Support</button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="legal-modal-body" id="legalModalBody">
+        <!-- Content will be injected dynamically via JS based on selected tab -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase v10 Compat SDKs (Zero Build, Pure CDN Integration) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <!-- Application Scripts -->
+  <script src="firebase-config.js?v=2.2"></script>
+  <script src="config.js?v=2.2"></script>
+  <script src="app.js?v=2.2"></script>
+</body>
 </html>

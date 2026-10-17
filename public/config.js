@@ -1,11 +1,10 @@
 /**
- * OmniStream Pro - Frontend Configuration
+ * OmniStream Pro - Global Frontend Configuration
  * 
- * LOCAL DEVELOPMENT:
- * Leave API_BASE_URL as "" (empty string). It will automatically connect to http://localhost:4000.
- * 
- * VERCEL DEPLOYMENT:
- * Paste your deployed Render backend URL below:
- * Example: window.API_BASE_URL = "https://omnistream-downloader-api.onrender.com";
+ * Default Backend URL:
+ * Connected to Render cloud service.
+ * When running locally on localhost, the app automatically switches to localhost:4000.
  */
-window.API_BASE_URL = "";
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+window.API_BASE_URL = isLocal ? "http://localhost:4000" : "https://video---download-tool.onrender.com";

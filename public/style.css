@@ -1428,6 +1428,336 @@ body {
   display: none !important;
 }
 
+/* ==========================================================================
+   Google Authentication & User Profile Dropdown
+   ========================================================================== */
+.auth-header-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.google-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.google-login-btn:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-active);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.user-profile-menu {
+  position: relative;
+}
+
+.user-profile-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 5px 12px 5px 6px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.user-profile-btn:hover {
+  border-color: var(--border-active);
+  background: var(--bg-surface-hover);
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--accent-blue);
+}
+
+.user-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 250px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 12px;
+  z-index: 1000;
+  animation: fadeInDown 0.18s ease-out;
+}
+
+.user-dropdown-header {
+  padding: 4px 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.user-dropdown-header strong {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.user-dropdown-header span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.user-phone-tag {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.75rem !important;
+  color: var(--accent-emerald) !important;
+  font-family: var(--font-mono);
+  background: rgba(16, 185, 129, 0.1);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  align-self: flex-start;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 6px 0;
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.dropdown-item.danger {
+  color: var(--accent-rose);
+}
+
+.dropdown-item.danger:hover {
+  background: rgba(225, 29, 72, 0.08);
+}
+
+/* ==========================================================================
+   Profile Onboarding & Complete Profile Modal
+   ========================================================================== */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: border-color var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 3px var(--border-glow);
+}
+
+.form-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   Legal & Policy Pages Modal (Full SPA Overlay)
+   ========================================================================== */
+.legal-modal-wrap {
+  max-width: 900px;
+  width: 95%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.legal-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-base);
+}
+
+.legal-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.legal-tab-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.legal-tab-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.legal-tab-btn.active {
+  background: var(--accent-blue);
+  color: #FFFFFF;
+  border-color: var(--accent-blue);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.legal-modal-body {
+  padding: 28px;
+  overflow-y: auto;
+  flex: 1;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.legal-modal-body h2 {
+  font-size: 1.45rem;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.legal-modal-body h3 {
+  font-size: 1.15rem;
+  color: var(--text-primary);
+  margin: 20px 0 8px;
+}
+
+.legal-modal-body p {
+  margin-bottom: 14px;
+}
+
+.legal-modal-body ul {
+  padding-left: 20px;
+  margin-bottom: 14px;
+}
+
+.legal-modal-body li {
+  margin-bottom: 6px;
+}
+
+.legal-highlight-box {
+  background: var(--bg-elevated);
+  border-left: 4px solid var(--accent-blue);
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  margin: 16px 0;
+  font-size: 0.92rem;
+}
+
+/* Contact Form */
+.contact-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 640px) {
+  .contact-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contact-textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+/* Footer Legal Navigation */
+.footer-nav-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.footer-nav-link {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.footer-nav-link:hover {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
+
 /* Responsive Breakpoints */
 @media (max-width: 860px) {
   .media-card {
@@ -1450,5 +1780,9 @@ body {
   }
   .progress-metrics {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .footer-nav-links {
+    justify-content: center;
+    width: 100%;
   }
 }
