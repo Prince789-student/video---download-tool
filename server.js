@@ -168,7 +168,7 @@ app.get('/api/status', (req, res) => {
 
   res.json({
     status: 'online',
-    appVersion: '2.7.0-with-cookies',
+    appVersion: '2.8.0-smart-fallback',
     engine: 'yt-dlp',
     hasCookies,
     cookiesSize,
@@ -191,9 +191,16 @@ app.get('/api/status', (req, res) => {
 function runProbe(targetUrl, useFallback = false) {
   return new Promise((resolve) => {
     const extractorArgs = useFallback ? FALLBACK_EXTRACTOR_ARGS : PRIMARY_EXTRACTOR_ARGS;
+    const baseArgs = useFallback ? [
+      '--no-warnings',
+      '--no-playlist',
+      '--no-check-certificates',
+      ...(denoExecutable ? ['--js-runtimes', `deno:${denoExecutable}`] : [])
+    ] : getYtDlpBaseArgs();
+
     const args = [
       '--dump-single-json',
-      ...getYtDlpBaseArgs(),
+      ...baseArgs,
       ...extractorArgs,
       targetUrl
     ];
@@ -408,11 +415,18 @@ app.post('/api/start-download', (req, res) => {
   // Prepare arguments for yt-dlp
   const useFallbackClient = req.body.usedFallback || (formatSpec && String(formatSpec).trim() === '18');
   const extractorArgs = useFallbackClient ? FALLBACK_EXTRACTOR_ARGS : PRIMARY_EXTRACTOR_ARGS;
+  const baseArgs = useFallbackClient ? [
+    '--no-warnings',
+    '--no-playlist',
+    '--no-check-certificates',
+    ...(denoExecutable ? ['--js-runtimes', `deno:${denoExecutable}`] : [])
+  ] : getYtDlpBaseArgs();
+
   const args = [
     '--no-playlist',
     '--newline',
     '--progress',
-    ...getYtDlpBaseArgs(),
+    ...baseArgs,
     ...extractorArgs
   ];
 
