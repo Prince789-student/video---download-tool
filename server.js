@@ -94,8 +94,9 @@ function getYtDlpBaseArgs() {
   return args;
 }
 
-const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android_creator'];
-const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=tv,mweb'];
+const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=mweb,tv,ios'];
+const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android,web,tv'];
+const RETRY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=ios,web'];
 
 // In-memory job tracker for real-time progress
 const jobs = new Map();
@@ -188,10 +189,13 @@ app.get('/api/status', (req, res) => {
 });
 
 // API 2: Analyze URL & Fetch Video Metadata + Quality Options
-function runProbe(targetUrl, useFallback = false) {
+function runProbe(targetUrl, tier = 0) {
   return new Promise((resolve) => {
-    const extractorArgs = useFallback ? FALLBACK_EXTRACTOR_ARGS : PRIMARY_EXTRACTOR_ARGS;
-    const baseArgs = useFallback ? [
+    let extractorArgs = PRIMARY_EXTRACTOR_ARGS;
+    if (tier === 1) extractorArgs = FALLBACK_EXTRACTOR_ARGS;
+    if (tier === 2) extractorArgs = RETRY_EXTRACTOR_ARGS;
+
+    const baseArgs = tier > 0 ? [
       '--no-warnings',
       '--no-playlist',
       '--no-check-certificates',
@@ -213,7 +217,7 @@ function runProbe(targetUrl, useFallback = false) {
     ytdlp.stderr.on('data', (d) => { stderrData += d.toString(); });
 
     ytdlp.on('close', (code) => {
-      resolve({ code, stdoutData, stderrData, usedFallback: Boolean(useFallback) });
+      resolve({ code, stdoutData, stderrData, tier });
     });
   });
 }
@@ -224,14 +228,20 @@ app.post('/api/info', async (req, res) => {
     return res.status(400).json({ error: 'Please provide a valid media URL starting with http:// or https://' });
   }
 
-  const cleanUrl = url.trim();
+  // Clean trailing parentheses, commas, or spaces from copy-paste
+  const cleanUrl = url.trim().replace(/[\)\(\,\s]+$/, '');
   console.log(`[Analyze] Probing URL: ${cleanUrl}`);
 
-  let probeResult = await runProbe(cleanUrl, false);
+  let probeResult = await runProbe(cleanUrl, 0);
 
   if (probeResult.code !== 0 || !probeResult.stdoutData.trim()) {
-    console.warn(`[Analyze] Primary probe failed (code ${probeResult.code}). Retrying with fallback client...`);
-    probeResult = await runProbe(cleanUrl, true);
+    console.warn(`[Analyze] Primary probe failed (code ${probeResult.code}). Trying Tier 1 fallback...`);
+    probeResult = await runProbe(cleanUrl, 1);
+  }
+
+  if (probeResult.code !== 0 || !probeResult.stdoutData.trim()) {
+    console.warn(`[Analyze] Tier 1 failed (code ${probeResult.code}). Trying Tier 2 fallback...`);
+    probeResult = await runProbe(cleanUrl, 2);
   }
 
   const { code, stdoutData, stderrData } = probeResult;
@@ -239,10 +249,13 @@ app.post('/api/info', async (req, res) => {
   if (code !== 0 || !stdoutData.trim()) {
     console.error(`[Analyze Error] code ${code}: ${stderrData}`);
     let userFriendlyError = 'Could not retrieve video details. Please verify the URL is public and accessible.';
-    if (stderrData.includes('Private video')) {
+
+    if (stderrData.includes('Video unavailable') || stderrData.includes('This video is unavailable')) {
+      userFriendlyError = 'This video is unavailable, deleted, or region-blocked on YouTube.';
+    } else if (stderrData.includes('Private video')) {
       userFriendlyError = 'This video is private or restricted by the creator.';
-    } else if (stderrData.includes('Sign in to confirm')) {
-      userFriendlyError = 'This video requires login or is age-restricted.';
+    } else if (stderrData.includes('Sign in to confirm you’re not a bot') || stderrData.includes('Sign in to confirm')) {
+      userFriendlyError = 'This video requires YouTube account login or has bot verification enabled.';
     } else if (stderrData.includes('404') || stderrData.includes('Not Found')) {
       userFriendlyError = 'Media not found. The post or video might have been deleted.';
     }
@@ -577,9 +590,33 @@ app.get('/api/file/:jobId', (req, res) => {
   });
 });
 
-// API 6: Save User Profile (Name, Phone Number, Email)
-const USERS_FILE = path.join(TEMP_DIR, 'users.json');
+// Persistent Data Directory
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
+// Backward compatibility: migrate legacy users.json from TEMP_DIR if present
+const OLD_USERS_FILE = path.join(TEMP_DIR, 'users.json');
+if (fs.existsSync(OLD_USERS_FILE) && !fs.existsSync(USERS_FILE)) {
+  try {
+    fs.copyFileSync(OLD_USERS_FILE, USERS_FILE);
+  } catch (e) {}
+}
+
+const ADMIN_SECRET = process.env.ADMIN_KEY || 'admin123';
+
+function checkAdminAuth(req) {
+  const authHeader = req.headers['authorization'];
+  const customHeader = req.headers['x-admin-key'];
+  const queryKey = req.query.key;
+  if (customHeader === ADMIN_SECRET || queryKey === ADMIN_SECRET) return true;
+  if (authHeader && authHeader.replace(/^Bearer\s+/i, '') === ADMIN_SECRET) return true;
+  return false;
+}
+
+// API 6: Save User Profile (Name, Phone Number, Email)
 app.post('/api/save-user', (req, res) => {
   const { uid, displayName, email, phoneNumber, photoURL } = req.body;
   if (!uid) {
@@ -626,6 +663,74 @@ app.get('/api/user/:uid', (req, res) => {
     }
   } catch (e) {}
   return res.status(404).json({ error: 'User not found' });
+});
+
+// Admin API 1: Verify Admin Password
+app.post('/api/admin/verify', (req, res) => {
+  const { key } = req.body;
+  if (key === ADMIN_SECRET) {
+    return res.json({ success: true });
+  }
+  return res.status(401).json({ error: 'Invalid admin credentials' });
+});
+
+// Admin API 2: Get All Registered Users with Analytics
+app.get('/api/admin/users', (req, res) => {
+  if (!checkAdminAuth(req)) {
+    return res.status(401).json({ error: 'Unauthorized: Admin authentication required' });
+  }
+
+  let users = {};
+  if (fs.existsSync(USERS_FILE)) {
+    try {
+      users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+    } catch (e) {
+      users = {};
+    }
+  }
+
+  const userList = Object.values(users).sort((a, b) => {
+    return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+  });
+
+  const totalPhoneNumbers = userList.filter(u => u.phoneNumber && u.phoneNumber.trim().length > 3).length;
+  const totalEmails = userList.filter(u => u.email && u.email.includes('@')).length;
+
+  res.json({
+    totalUsers: userList.length,
+    totalWithPhone: totalPhoneNumbers,
+    totalWithEmail: totalEmails,
+    users: userList,
+    serverStats: {
+      uptime: Math.floor(process.uptime()),
+      memoryUsage: Math.round(process.memoryUsage().rss / 1024 / 1024) + ' MB',
+      activeJobs: jobs.size
+    }
+  });
+});
+
+// Admin API 3: Delete User
+app.delete('/api/admin/user/:uid', (req, res) => {
+  if (!checkAdminAuth(req)) {
+    return res.status(401).json({ error: 'Unauthorized: Admin authentication required' });
+  }
+
+  const { uid } = req.params;
+  if (!fs.existsSync(USERS_FILE)) {
+    return res.status(404).json({ error: 'No users file found' });
+  }
+
+  try {
+    const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+    if (users[uid]) {
+      delete users[uid];
+      fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+      return res.json({ success: true, message: `User ${uid} deleted successfully` });
+    }
+    return res.status(404).json({ error: 'User not found' });
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to delete user' });
+  }
 });
 
 // Start Server

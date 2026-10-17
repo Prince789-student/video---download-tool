@@ -616,6 +616,8 @@ const dropdownEmail = document.getElementById('dropdownEmail');
 const dropdownPhone = document.getElementById('dropdownPhone');
 const editProfileBtn = document.getElementById('editProfileBtn');
 const logoutBtn = document.getElementById('logoutBtn');
+const dropdownAdminBtn = document.getElementById('dropdownAdminBtn');
+const ADMIN_EMAIL = 'pk9762920@gmail.com';
 
 // Profile Onboarding Modal Elements
 const profileModalOverlay = document.getElementById('profileModalOverlay');
@@ -757,12 +759,25 @@ window.addEventListener('auth:login', (e) => {
   dropdownFullName.textContent = user.displayName || 'User';
   dropdownEmail.textContent = user.email || '';
   dropdownPhone.textContent = user.phoneNumber ? `Phone: ${user.phoneNumber}` : 'No phone number added';
+
+  // Only display the Admin Console button if the authenticated user is pk9762920@gmail.com
+  if (dropdownAdminBtn) {
+    const isOwner = user.email && user.email.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase();
+    if (isOwner) {
+      dropdownAdminBtn.classList.remove('hidden');
+    } else {
+      dropdownAdminBtn.classList.add('hidden');
+    }
+  }
 });
 
 window.addEventListener('auth:logout', () => {
   googleLoginBtn.classList.remove('hidden');
   userProfileMenu.classList.add('hidden');
   userDropdown.classList.add('hidden');
+  if (dropdownAdminBtn) {
+    dropdownAdminBtn.classList.add('hidden');
+  }
 });
 
 window.addEventListener('auth:require_profile', () => {

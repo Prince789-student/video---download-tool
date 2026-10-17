@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Console — ToolBox Pro User Lead Management</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0B0F19;
+      --bg-surface: #111827;
+      --bg-elevated: #1F2937;
+      --bg-card: rgba(17, 24, 39, 0.85);
+      --border-subtle: #374151;
+      --border-accent: #4F46E5;
+      --text-primary: #F9FAFB;
+      --text-secondary: #9CA3AF;
+      --text-muted: #6B7280;
+      --accent: #6366F1;
+      --accent-hover: #4F46E5;
+      --success: #10B981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --danger: #EF4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --font-display: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Ambient background gradient */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
+                  radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Login Lock Screen */
+    .lock-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 15, 25, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .lock-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      position: relative;
+    }
+
+    .lock-icon-wrap {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+
+    .lock-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .lock-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.75rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 0.85rem 1.25rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .lock-error {
+      margin-top: 1rem;
+      color: var(--danger);
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    /* Main Console Header */
+    .admin-header {
+      position: relative;
+      z-index: 10;
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 1rem 2rem;
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .admin-tag {
+      background: var(--accent);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .btn-outline {
+      padding: 6px 14px;
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-outline:hover {
+      background: var(--bg-elevated);
+      border-color: var(--text-secondary);
+    }
+
+    /* Main Container */
+    .main-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      flex: 1;
+      width: 100%;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stat-value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+
+    .stat-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Filter & Action Bar */
+    .action-bar {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 280px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.65rem 1rem 0.65rem 2.5rem;
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 0.88rem;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .btn-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-action {
+      padding: 0.65rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: var(--border-subtle);
+    }
+
+    .btn-export {
+      background: #059669;
+      border-color: #059669;
+      color: white;
+    }
+
+    .btn-export:hover {
+      background: #047857;
+    }
+
+    /* Data Table */
+    .table-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    th {
+      background: var(--bg-elevated);
+      padding: 0.85rem 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(55, 65, 81, 0.4);
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: rgba(31, 41, 55, 0.4);
+    }
+
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--bg-elevated);
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .user-uid {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .phone-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #34D399;
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      background: rgba(16, 185, 129, 0.1);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      transition: all 0.2s;
+    }
+
+    .phone-tag:hover {
+      background: rgba(16, 185, 129, 0.2);
+    }
+
+    .email-tag {
+      color: #93C5FD;
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+
+    .copy-btn:hover {
+      color: var(--text-primary);
+      background: var(--border-subtle);
+    }
+
+    .badge-date {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .action-icon-btn {
+      background: none;
+      border: 1px solid var(--border-subtle);
+      color: var(--danger);
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .action-icon-btn:hover {
+      background: var(--danger-bg);
+      border-color: var(--danger);
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 4rem 2rem;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .empty-icon {
+      margin-bottom: 1rem;
+      color: var(--text-muted);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-accent);
+      color: var(--text-primary);
+      padding: 12px 20px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      font-size: 0.88rem;
+      z-index: 2000;
+      display: none;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-bg"></div>
+
+  <!-- Admin PIN / Password Gate -->
+  <div class="lock-screen" id="lockScreen">
+    <div class="lock-card">
+      <div class="lock-icon-wrap">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+      <h2 class="lock-title">Admin Console</h2>
+      <p class="lock-subtitle">Protected portal restricted exclusively to <strong>pk9762920@gmail.com</strong></p>
+
+      <!-- Google Sign In Button for Admin -->
+      <button type="button" class="btn-primary" id="adminGoogleBtn" style="margin-bottom: 1.25rem; background: #2563EB; border-color: #2563EB;">
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path fill="#ffffff" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.87c2.26-2.09 3.67-5.17 3.67-9.15z"/>
+          <path fill="#ffffff" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.87-3.05c-1.08.72-2.45 1.16-4.06 1.16-3.13 0-5.78-2.11-6.73-4.96H1.25v3.15C3.25 21.36 7.35 24 12 24z"/>
+          <path fill="#ffffff" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.25C.45 8.22 0 10.06 0 12s.45 3.78 1.25 5.39l4.02-3.15z"/>
+          <path fill="#ffffff" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.25 2.64 1.25 6.61l4.02 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+        </svg>
+        <span>Sign In with Admin Google Account</span>
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem;">
+        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Or Master Key</span>
+        <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+      </div>
+
+      <form id="lockForm">
+        <input type="password" id="adminKeyInput" class="form-input" placeholder="Admin PIN / Key (admin123)" required>
+        <button type="submit" class="btn-primary" id="loginBtn" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
+          <span>Unlock with Key</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+      </form>
+      <div class="lock-error" id="lockError">Access restricted. Verify you are logged into pk9762920@gmail.com</div>
+    </div>
+  </div>
+
+  <!-- Admin Header -->
+  <header class="admin-header">
+    <div class="header-content">
+      <a href="index.html" class="brand-wrap">
+        <img src="logo.png" alt="ToolBox" class="brand-logo">
+        <span class="brand-title">ToolBox Pro</span>
+        <span class="admin-tag">Admin Console</span>
+      </a>
+
+      <div class="header-controls">
+        <div class="status-badge" id="serverStatusBadge">
+          <span class="status-dot"></span>
+          <span id="serverStatusText">pk9762920@gmail.com</span>
+        </div>
+        <a href="index.html" class="btn-outline">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          <span>Live Site</span>
+        </a>
+        <button class="btn-outline" id="logoutBtn" style="color: var(--danger);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-wrap">
+    <!-- Analytics Bento Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">
+          <span>Total Registered Users</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </div>
+        <div class="stat-value" id="statTotalUsers">0</div>
+        <div class="stat-sub">Google Accounts + Profiles</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">
+          <span>Phone Numbers Collected</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+        </div>
+        <div class="stat-value" id="statWithPhone" style="color: #34D399;">0</div>
+        <div class="stat-sub">Direct WhatsApp Outreach Leads</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">
+          <span>Verified Email Contacts</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        </div>
+        <div class="stat-value" id="statWithEmail" style="color: #93C5FD;">0</div>
+        <div class="stat-sub">Ready for newsletters / alerts</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">
+          <span>Server Engine Status</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+        </div>
+        <div class="stat-value" id="statServerHealth" style="font-size: 1.4rem;">Online</div>
+        <div class="stat-sub" id="statServerUptime">Memory: Connected</div>
+      </div>
+    </div>
+
+    <!-- Actions Bar -->
+    <div class="action-bar">
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search users by Name, Phone, Email, or UID...">
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-action" id="refreshBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          <span>Refresh</span>
+        </button>
+
+        <button class="btn-action btn-export" id="exportCsvBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>Export to Excel / CSV</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>User / Profile</th>
+            <th>Phone / WhatsApp</th>
+            <th>Email Address</th>
+            <th>Registered / Updated</th>
+            <th>User ID</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <!-- Dynamically populated -->
+        </tbody>
+      </table>
+
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </div>
+        <h3>No Users Found</h3>
+        <p>No user records matched your search query or have been submitted yet.</p>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toastNotice">Copied to clipboard!</div>
+
+  <!-- Firebase v10 Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js?v=2.5"></script>
+  <script src="config.js?v=2.5"></script>
+
+  <script>
+    const ADMIN_EMAIL = 'pk9762920@gmail.com';
+    let adminToken = sessionStorage.getItem('omnistream_admin_key') || '';
+    let currentAdminUser = null;
+    let allUsers = [];
+
+    const lockScreen = document.getElementById('lockScreen');
+    const lockForm = document.getElementById('lockForm');
+    const adminKeyInput = document.getElementById('adminKeyInput');
+    const lockError = document.getElementById('lockError');
+    const adminGoogleBtn = document.getElementById('adminGoogleBtn');
+    const userTableBody = document.getElementById('userTableBody');
+    const emptyState = document.getElementById('emptyState');
+    const searchInput = document.getElementById('searchInput');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const toastNotice = document.getElementById('toastNotice');
+
+    function getBackendUrl() {
+      if (typeof window.API_BASE_URL === 'string' && window.API_BASE_URL.trim()) {
+        return window.API_BASE_URL.trim().replace(/\/+$/, '');
+      }
+      return '';
+    }
+
+    function showToast(msg) {
+      toastNotice.textContent = msg;
+      toastNotice.style.display = 'block';
+      setTimeout(() => {
+        toastNotice.style.display = 'none';
+      }, 2500);
+    }
+
+    // Google Sign-In for Admin
+    if (adminGoogleBtn) {
+      adminGoogleBtn.addEventListener('click', async () => {
+        try {
+          if (typeof firebase !== 'undefined' && firebase.apps.length) {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            const res = await firebase.auth().signInWithPopup(provider);
+            const user = res.user;
+
+            if (user && user.email && user.email.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) {
+              unlockAdmin(user.email);
+            } else {
+              lockError.textContent = `Access Denied: Logged in as ${user.email}. Only ${ADMIN_EMAIL} is authorized.`;
+              lockError.style.display = 'block';
+            }
+          }
+        } catch (err) {
+          console.warn('[Admin Auth]', err);
+          lockError.textContent = 'Sign in cancelled or popup blocked.';
+          lockError.style.display = 'block';
+        }
+      });
+    }
+
+    // Check Firebase Auth state
+    if (typeof firebase !== 'undefined') {
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user && user.email && user.email.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase()) {
+          currentAdminUser = user;
+          unlockAdmin(user.email);
+        }
+      });
+    }
+
+    // Fallback Key check
+    if (adminToken) {
+      verifyAndLoad(adminToken);
+    }
+
+    lockForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const entered = adminKeyInput.value.trim();
+      if (!entered) return;
+      verifyAndLoad(entered);
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      sessionStorage.removeItem('omnistream_admin_key');
+      adminToken = '';
+      currentAdminUser = null;
+      if (typeof firebase !== 'undefined' && firebase.apps.length) {
+        try { await firebase.auth().signOut(); } catch (e) {}
+      }
+      lockScreen.style.display = 'flex';
+      adminKeyInput.value = '';
+    });
+
+    function unlockAdmin(email) {
+      adminToken = 'admin123';
+      sessionStorage.setItem('omnistream_admin_key', adminToken);
+      lockScreen.style.display = 'none';
+      document.getElementById('serverStatusText').textContent = email || ADMIN_EMAIL;
+      loadUsers();
+    }
+
+    async function verifyAndLoad(key) {
+      lockError.style.display = 'none';
+      const base = getBackendUrl();
+
+      try {
+        const res = await fetch(`${base}/api/admin/users`, {
+          headers: { 'x-admin-key': key, 'x-user-email': ADMIN_EMAIL }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          adminToken = key;
+          sessionStorage.setItem('omnistream_admin_key', key);
+          lockScreen.style.display = 'none';
+          processUserData(data);
+        } else {
+          if (key === 'admin123') {
+            unlockAdmin(ADMIN_EMAIL);
+          } else {
+            lockError.textContent = 'Invalid credentials. Only pk9762920@gmail.com is authorized.';
+            lockError.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        if (key === 'admin123') {
+          unlockAdmin(ADMIN_EMAIL);
+        } else {
+          lockError.textContent = 'Connection error. Free Render instances may take ~45s to wake up.';
+          lockError.style.display = 'block';
+        }
+      }
+    }
+
+    async function loadUsers() {
+      const base = getBackendUrl();
+      try {
+        const res = await fetch(`${base}/api/admin/users`, {
+          headers: { 'x-admin-key': adminToken || 'admin123', 'x-user-email': ADMIN_EMAIL }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          processUserData(data);
+        } else {
+          loadFromFirestoreFallback();
+        }
+      } catch (e) {
+        loadFromFirestoreFallback();
+      }
+    }
+
+    // Firestore Direct Sync
+    async function loadFromFirestoreFallback() {
+      let firestoreUsers = [];
+      if (typeof firebase !== 'undefined' && firebase.apps.length) {
+        try {
+          const snapshot = await firebase.firestore().collection('users').get();
+          snapshot.forEach(doc => {
+            firestoreUsers.push({ uid: doc.id, ...doc.data() });
+          });
+        } catch (e) {
+          console.warn('[Firestore Sync]', e);
+        }
+      }
+      processUserData({ users: firestoreUsers, totalUsers: firestoreUsers.length });
+    }
+
+    function processUserData(data) {
+      let users = data.users || [];
+      allUsers = users;
+
+      // Update Bento Stats
+      document.getElementById('statTotalUsers').textContent = users.length;
+      document.getElementById('statWithPhone').textContent = users.filter(u => u.phoneNumber && u.phoneNumber.trim().length > 3).length;
+      document.getElementById('statWithEmail').textContent = users.filter(u => u.email && u.email.includes('@')).length;
+      
+      if (data.serverStats) {
+        document.getElementById('statServerHealth').textContent = `${data.serverStats.memoryUsage}`;
+        document.getElementById('statServerUptime').textContent = `Uptime: ${Math.floor(data.serverStats.uptime / 60)} mins • Active Jobs: ${data.serverStats.activeJobs}`;
+      }
+
+      renderTable(allUsers);
+    }
+
+    function renderTable(users) {
+      userTableBody.innerHTML = '';
+      if (!users || users.length === 0) {
+        emptyState.style.display = 'block';
+        return;
+      }
+      emptyState.style.display = 'none';
+
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+
+        const avatar = u.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(u.displayName || 'User')}`;
+        const phone = u.phoneNumber || '';
+        const cleanPhone = phone.replace(/[^0-9+]/g, '');
+        const email = u.email || 'No email';
+        const dateStr = u.updatedAt ? new Date(u.updatedAt).toLocaleString() : 'Recent';
+
+        tr.innerHTML = `
+          <td>
+            <div class="user-cell">
+              <img src="${avatar}" class="user-avatar" alt="Avatar">
+              <div>
+                <div class="user-name">${escapeHtml(u.displayName || 'Anonymous User')}</div>
+                <div class="user-uid">ID: ${escapeHtml(u.uid ? u.uid.slice(0, 14) + '...' : 'Unknown')}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            ${phone ? `
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <a href="https://wa.me/${cleanPhone.replace('+', '')}" target="_blank" class="phone-tag" title="Click to chat on WhatsApp">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  <span>${escapeHtml(phone)}</span>
+                </a>
+                <button class="copy-btn" onclick="copyText('${escapeHtml(phone)}')" title="Copy Phone">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+            ` : `<span style="color: var(--text-muted); font-size: 0.82rem;">Not provided</span>`}
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="mailto:${escapeHtml(email)}" class="email-tag">${escapeHtml(email)}</a>
+              ${email !== 'No email' ? `
+                <button class="copy-btn" onclick="copyText('${escapeHtml(email)}')" title="Copy Email">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              ` : ''}
+            </div>
+          </td>
+          <td><span class="badge-date">${dateStr}</span></td>
+          <td><code style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(u.uid || '')}</code></td>
+          <td style="text-align: right;">
+            <button class="action-icon-btn" onclick="deleteUserRecord('${escapeHtml(u.uid || '')}')" title="Delete record">Delete</button>
+          </td>
+        `;
+
+        userTableBody.appendChild(tr);
+      });
+    }
+
+    // Filter / Search
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) {
+        renderTable(allUsers);
+        return;
+      }
+      const filtered = allUsers.filter(u => {
+        const name = (u.displayName || '').toLowerCase();
+        const phone = (u.phoneNumber || '').toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        const uid = (u.uid || '').toLowerCase();
+        return name.includes(q) || phone.includes(q) || email.includes(q) || uid.includes(q);
+      });
+      renderTable(filtered);
+    });
+
+    refreshBtn.addEventListener('click', () => {
+      loadUsers();
+      showToast('User database refreshed!');
+    });
+
+    // Export to CSV
+    exportCsvBtn.addEventListener('click', () => {
+      if (!allUsers || allUsers.length === 0) {
+        alert('No user data to export.');
+        return;
+      }
+
+      const headers = ['UID', 'Full Name', 'Phone Number', 'Email', 'Updated At', 'Avatar URL'];
+      const rows = allUsers.map(u => [
+        `"${(u.uid || '').replace(/"/g, '""')}"`,
+        `"${(u.displayName || '').replace(/"/g, '""')}"`,
+        `"${(u.phoneNumber || '').replace(/"/g, '""')}"`,
+        `"${(u.email || '').replace(/"/g, '""')}"`,
+        `"${(u.updatedAt || '').replace(/"/g, '""')}"`,
+        `"${(u.photoURL || '').replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `toolbox_users_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('CSV Exported successfully!');
+    });
+
+    window.copyText = function(text) {
+      navigator.clipboard.writeText(text);
+      showToast(`Copied: ${text}`);
+    };
+
+    window.deleteUserRecord = async function(uid) {
+      if (!confirm(`Are you sure you want to delete user ${uid}?`)) return;
+      const base = getBackendUrl();
+      try {
+        const res = await fetch(`${base}/api/admin/user/${uid}`, {
+          method: 'DELETE',
+          headers: { 'x-admin-key': adminToken || 'admin123', 'x-user-email': ADMIN_EMAIL }
+        });
+        if (res.ok) {
+          showToast('User record deleted.');
+          allUsers = allUsers.filter(u => u.uid !== uid);
+          renderTable(allUsers);
+        } else {
+          alert('Could not delete user.');
+        }
+      } catch (e) {
+        alert('Server connection error.');
+      }
+    };
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
