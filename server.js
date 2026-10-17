@@ -163,10 +163,15 @@ app.get('/api/status', (req, res) => {
     ffmpegVersion = 'Not detected';
   }
 
+  const hasCookies = fs.existsSync(COOKIES_PATH);
+  const cookiesSize = hasCookies ? fs.statSync(COOKIES_PATH).size : 0;
+
   res.json({
     status: 'online',
-    appVersion: '2.6.0-anti-bot',
+    appVersion: '2.7.0-with-cookies',
     engine: 'yt-dlp',
+    hasCookies,
+    cookiesSize,
     ytdlpVersion,
     ffmpegVersion,
     supportedPlatforms: [
