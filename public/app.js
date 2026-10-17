@@ -772,7 +772,7 @@ const LEGAL_CONTENT = {
     <h2>Privacy Policy</h2>
     <p>Last Updated: October 2026</p>
     <div class="legal-highlight-box">
-      OmniStream Pro respects your digital privacy. We operate a zero-log media processing engine. No downloaded video or audio files are retained on our servers past temporary processing.
+      ToolBox Pro respects your digital privacy. We operate a zero-log media processing engine. No downloaded video or audio files are retained on our servers past temporary processing.
     </div>
     <h3>1. Information We Collect</h3>
     <p>We collect limited information to provide seamless media downloads:</p>
@@ -783,26 +783,26 @@ const LEGAL_CONTENT = {
     </ul>
 
     <h3>2. How Your Data Is Protected</h3>
-    <p>All communication between your device and OmniStream Pro is encrypted using industry-standard TLS 1.3 / HTTPS encryption. We never sell, rent, or monetize your personal information or contact details with third-party advertisers or data brokers.</p>
+    <p>All communication between your device and ToolBox Pro is encrypted using industry-standard TLS 1.3 / HTTPS encryption. We never sell, rent, or monetize your personal information or contact details with third-party advertisers or data brokers.</p>
 
     <h3>3. Cookies & Advertising</h3>
     <p>We may partner with trusted advertising networks, such as Google AdSense, to display non-intrusive advertisements. These partners may use cookies (such as DoubleClick DART cookies) to serve ads based on your visit to this and other websites on the internet. You may opt out of personalized advertising by visiting Google Ad Settings.</p>
 
     <h3>4. Children's Online Privacy Protection (COPPA)</h3>
-    <p>OmniStream Pro is designed for general audiences and does not knowingly collect personal identifiable information from children under the age of 13.</p>
+    <p>ToolBox Pro is designed for general audiences and does not knowingly collect personal identifiable information from children under the age of 13.</p>
 
     <h3>5. Contact Our Data Protection Officer</h3>
-    <p>If you have questions regarding your data or wish to delete your account, contact: <strong>privacy@omnistream.pro</strong></p>
+    <p>If you have questions regarding your data or wish to delete your account, contact: <strong>privacy@toolbox.pro</strong></p>
   `,
 
   terms: `
     <h2>Terms of Service & Acceptable Use</h2>
     <p>Effective Date: October 2026</p>
     <div class="legal-highlight-box">
-      By accessing or using OmniStream Pro, you acknowledge and agree to comply with these Terms of Service. If you do not agree, please discontinue using the service immediately.
+      By accessing or using ToolBox Pro, you acknowledge and agree to comply with these Terms of Service. If you do not agree, please discontinue using the service immediately.
     </div>
     <h3>1. Permitted Use</h3>
-    <p>OmniStream Pro is an advanced personal media caching and backup tool designed for educational, archival, and fair-use purposes. You agree to use this service exclusively for content you own or have explicit permission to access and download.</p>
+    <p>ToolBox Pro is an advanced personal media caching and backup tool designed for educational, archival, and fair-use purposes. You agree to use this service exclusively for content you own or have explicit permission to access and download.</p>
 
     <h3>2. User Warranties & Prohibitions</h3>
     <p>You strictly agree that you shall NOT:</p>
@@ -814,27 +814,27 @@ const LEGAL_CONTENT = {
     </ul>
 
     <h3>3. Disclaimer of Warranties</h3>
-    <p>OmniStream Pro is provided on an "AS-IS" and "AS-AVAILABLE" basis. We make no warranty that our service will be uninterrupted, error-free, or compatible with every streaming protocol at all times.</p>
+    <p>ToolBox Pro is provided on an "AS-IS" and "AS-AVAILABLE" basis. We make no warranty that our service will be uninterrupted, error-free, or compatible with every streaming protocol at all times.</p>
 
     <h3>4. Limitation of Liability</h3>
-    <p>Under no circumstances shall OmniStream Pro, its developers, or affiliates be liable for direct, indirect, incidental, or consequential damages resulting from the use or misuse of media obtained through this tool.</p>
+    <p>Under no circumstances shall ToolBox Pro, its developers, or affiliates be liable for direct, indirect, incidental, or consequential damages resulting from the use or misuse of media obtained through this tool.</p>
   `,
 
   dmca: `
     <h2>DMCA Copyright Notice & Disclaimer</h2>
     <div class="legal-highlight-box">
-      OmniStream Pro strictly complies with the Digital Millennium Copyright Act (17 U.S.C. § 512) and international copyright directives.
+      ToolBox Pro strictly complies with the Digital Millennium Copyright Act (17 U.S.C. § 512) and international copyright directives.
     </div>
     <h3>1. Safe Harbor & Zero-Hosting Policy</h3>
-    <p>OmniStream Pro is a client-side facilitation and format transcode proxy. <strong>We do not host, store, index, or broadcast any audio or video files on our servers.</strong></p>
-    <p>All video content retrieved through OmniStream Pro is streamed directly from public third-party content delivery networks (CDNs) maintained by platforms such as YouTube, Instagram, TikTok, and Vimeo. Files are cached solely in temporary memory to multiplex audio and video tracks, and are purged automatically.</p>
+    <p>ToolBox Pro is a client-side facilitation and format transcode proxy. <strong>We do not host, store, index, or broadcast any audio or video files on our servers.</strong></p>
+    <p>All video content retrieved through ToolBox Pro is streamed directly from public third-party content delivery networks (CDNs) maintained by platforms such as YouTube, Instagram, TikTok, and Vimeo. Files are cached solely in temporary memory to multiplex audio and video tracks, and are purged automatically.</p>
 
     <h3>2. Copyright Infringement Claims</h3>
     <p>If you are a copyright owner or an authorized agent and believe that content accessible through our utility infringes your rights, you may submit a formal notification to our designated copyright agent:</p>
     <ul>
-      <li><strong>Designated Agent:</strong> OmniStream Copyright Compliance Department</li>
-      <li><strong>Notice Email:</strong> <strong>dmca@omnistream.pro</strong></li>
-      <li><strong>Physical Address:</strong> Legal Dept, OmniStream Pro Cloud Architecture, New Delhi, India</li>
+      <li><strong>Designated Agent:</strong> ToolBox Copyright Compliance Department</li>
+      <li><strong>Notice Email:</strong> <strong>dmca@toolbox.pro</strong></li>
+      <li><strong>Physical Address:</strong> Legal Dept, ToolBox Cloud Architecture, New Delhi, India</li>
     </ul>
 
     <h3>3. Required Takedown Information</h3>
@@ -849,12 +849,12 @@ const LEGAL_CONTENT = {
   `,
 
   about: `
-    <h2>About OmniStream Pro</h2>
+    <h2>About ToolBox Pro</h2>
     <div class="legal-highlight-box">
-      Engineering the world's fastest, cleanest, and most accessible web media archiving engine.
+      ToolBox — All Useful Tools in One Place. Engineering the world's fastest, cleanest, and most accessible web utilities.
     </div>
     <h3>Our Vision</h3>
-    <p>OmniStream Pro was born out of frustration with predatory video download sites bloated with spam popups, scam ads, malware redirects, and artificial quality restrictions. We set out to build an open, crystal-clean platform that treats users with dignity.</p>
+    <p>ToolBox Pro was born out of frustration with predatory video download sites bloated with spam popups, scam ads, malware redirects, and artificial quality restrictions. We set out to build an open, crystal-clean platform that brings all useful web utilities together in one place.</p>
 
     <h3>Under the Hood</h3>
     <p>Our server architecture leverages cutting-edge open source tools:</p>
@@ -905,7 +905,7 @@ const LEGAL_CONTENT = {
     </button>
 
     <div class="legal-highlight-box" style="margin-top: 24px;">
-      <strong>Direct Support Email:</strong> support@omnistream.pro<br>
+      <strong>Direct Support Email:</strong> support@toolbox.pro<br>
       <strong>Average Response Time:</strong> Within 24 Hours
     </div>
   `

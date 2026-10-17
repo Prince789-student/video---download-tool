@@ -180,6 +180,19 @@ body {
   cursor: pointer;
 }
 
+.brand-logo-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: contain;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.22);
+  transition: transform var(--transition-fast);
+}
+
+.brand:hover .brand-logo-img {
+  transform: scale(1.06);
+}
+
 .brand-icon {
   width: 42px;
   height: 42px;
@@ -198,13 +211,21 @@ body {
 }
 
 .brand-name {
-  font-size: 1.25rem;
+  font-size: 1.32rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 6px;
+  line-height: 1.1;
+}
+
+.brand-box {
+  background: linear-gradient(135deg, #0284C7 0%, #00F2FE 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 
 .brand-pro {
@@ -212,15 +233,16 @@ body {
   font-weight: 800;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #2563EB;
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
   color: #FFFFFF;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .brand-badge {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   color: var(--text-secondary);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .header-actions {
