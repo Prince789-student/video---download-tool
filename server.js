@@ -69,12 +69,25 @@ try {
   console.warn('[Startup] yt-dlp check warning:', e.message);
 }
 
+const COOKIES_PATH = path.join(__dirname, 'cookies.txt');
+if (process.env.YOUTUBE_COOKIES && !fs.existsSync(COOKIES_PATH)) {
+  try {
+    fs.writeFileSync(COOKIES_PATH, process.env.YOUTUBE_COOKIES.replace(/\\n/g, '\n'), 'utf8');
+    console.log('[Cookies] Loaded YOUTUBE_COOKIES from environment variable');
+  } catch (e) {
+    console.warn('[Cookies] Failed to save YOUTUBE_COOKIES:', e.message);
+  }
+}
+
 function getYtDlpBaseArgs() {
   const args = [
     '--no-warnings',
     '--no-playlist',
     '--no-check-certificates'
   ];
+  if (fs.existsSync(COOKIES_PATH)) {
+    args.push('--cookies', COOKIES_PATH);
+  }
   if (denoExecutable) {
     args.push('--js-runtimes', `deno:${denoExecutable}`);
   }
