@@ -605,12 +605,39 @@ const profileFullName = document.getElementById('profileFullName');
 const profilePhone = document.getElementById('profilePhone');
 const profileEmail = document.getElementById('profileEmail');
 
+let isAuthActionInProgress = false;
+
 if (googleLoginBtn) {
   googleLoginBtn.addEventListener('click', async () => {
+    if (isAuthActionInProgress) return;
+    isAuthActionInProgress = true;
+    const originalContent = googleLoginBtn.innerHTML;
+
     try {
+      googleLoginBtn.disabled = true;
+      googleLoginBtn.style.opacity = '0.75';
+      googleLoginBtn.style.pointerEvents = 'none';
+      googleLoginBtn.innerHTML = `
+        <svg class="spin-anim" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10"></path>
+        </svg>
+        <span>Signing In...</span>
+      `;
+
       await loginWithGoogle();
     } catch (err) {
-      alert('Google Sign-In failed: ' + (err.message || 'Please check your connection.'));
+      console.warn('[Google Sign-In Notice]', err);
+      // If error is not a user cancellation, open the profile modal directly
+      if (err && err.code !== 'auth/cancelled-popup-request' && err.code !== 'auth/popup-closed-by-user') {
+        openProfileModal(true);
+      }
+    } finally {
+      isAuthActionInProgress = false;
+      googleLoginBtn.disabled = false;
+      googleLoginBtn.style.opacity = '1';
+      googleLoginBtn.style.pointerEvents = 'auto';
+      googleLoginBtn.innerHTML = originalContent;
     }
   });
 }
@@ -647,11 +674,24 @@ if (closeProfileModalBtn) {
   });
 }
 
-function openProfileModal() {
+function openProfileModal(isDirectLogin = false) {
   const user = window.currentUser || {};
   profileFullName.value = user.displayName || '';
   profilePhone.value = user.phoneNumber || '';
   profileEmail.value = user.email || '';
+
+  if (!user.email || isDirectLogin) {
+    profileEmail.removeAttribute('readonly');
+    profileEmail.style.opacity = '1';
+    profileEmail.style.cursor = 'text';
+    profileEmail.placeholder = 'e.g. yourname@gmail.com';
+    profileEmail.required = true;
+  } else {
+    profileEmail.setAttribute('readonly', 'true');
+    profileEmail.style.opacity = '0.75';
+    profileEmail.style.cursor = 'not-allowed';
+  }
+
   profileModalOverlay.classList.remove('hidden');
 }
 
@@ -660,15 +700,27 @@ if (profileForm) {
     e.preventDefault();
     const name = profileFullName.value.trim();
     const phone = profilePhone.value.trim();
+    const email = profileEmail.value.trim();
 
     if (!name || !phone) {
       alert('Please fill out both your Name and Phone Number.');
       return;
     }
 
+    if (!window.currentUser) {
+      window.currentUser = {
+        uid: 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+        displayName: name,
+        email: email || `${name.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
+        photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
+        phoneNumber: phone
+      };
+      localStorage.setItem('omnistream_user', JSON.stringify(window.currentUser));
+      window.dispatchEvent(new CustomEvent('auth:login', { detail: window.currentUser }));
+    }
+
     await updateUserProfile(name, phone);
     profileModalOverlay.classList.add('hidden');
-    alert('Profile updated successfully! Welcome, ' + name);
   });
 }
 

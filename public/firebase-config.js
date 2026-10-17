@@ -89,44 +89,64 @@ function initFirebaseApp() {
   }
 }
 
+let _isLoggingIn = false;
+
 function startFallbackSignIn() {
-  const demoName = prompt("Enter your Name for Google Sign-In:", "Prince Kumar");
-  if (!demoName) return null;
-  const demoEmail = prompt("Enter your Email:", "prince@gmail.com") || "prince@gmail.com";
-
-  const demoUser = {
-    uid: 'user_' + Date.now(),
-    displayName: demoName,
-    email: demoEmail,
-    photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(demoName)}`,
-    phoneNumber: ''
-  };
-
-  window.currentUser = demoUser;
-  localStorage.setItem('omnistream_user', JSON.stringify(demoUser));
-  window.dispatchEvent(new CustomEvent('auth:login', { detail: demoUser }));
-  window.dispatchEvent(new CustomEvent('auth:require_profile', { detail: demoUser }));
-  return demoUser;
+  if (typeof openProfileModal === 'function') {
+    openProfileModal(true);
+  } else {
+    window.dispatchEvent(new CustomEvent('auth:require_profile', { detail: { isDirect: true } }));
+  }
+  return null;
 }
 
-// Google Sign-In Trigger
+// Google Sign-In Trigger with Popup Conflict Protection & Debounce
 async function loginWithGoogle() {
-  if (window.firebaseInitialized && typeof firebase !== 'undefined') {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('profile');
-    provider.addScope('email');
-    try {
-      const result = await firebase.auth().signInWithPopup(provider);
-      return result.user;
-    } catch (error) {
-      console.warn('[Google Sign-In Info]', error.code, error.message);
-      if (error.code === 'auth/unauthorized-domain' || error.code === 'auth/operation-not-allowed' || error.code === 'auth/configuration-not-found') {
-        return startFallbackSignIn();
+  if (_isLoggingIn) {
+    console.warn('[Google Auth] Sign-in operation already in flight.');
+    return null;
+  }
+  _isLoggingIn = true;
+
+  try {
+    if (window.firebaseInitialized && typeof firebase !== 'undefined') {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.addScope('profile');
+      provider.addScope('email');
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      try {
+        const result = await firebase.auth().signInWithPopup(provider);
+        return result.user;
+      } catch (error) {
+        console.warn('[Google Sign-In Info]', error.code, error.message);
+
+        // Silently ignore popup closed or cancelled requests (no error alert)
+        if (
+          error.code === 'auth/cancelled-popup-request' ||
+          error.code === 'auth/popup-closed-by-user' ||
+          error.code === 'auth/user-cancelled'
+        ) {
+          return null;
+        }
+
+        // If domain is unauthorized on Vercel or popup blocked, open clean profile onboarding
+        if (
+          error.code === 'auth/unauthorized-domain' ||
+          error.code === 'auth/operation-not-allowed' ||
+          error.code === 'auth/configuration-not-found' ||
+          error.code === 'auth/popup-blocked'
+        ) {
+          return startFallbackSignIn();
+        }
+
+        throw error;
       }
-      throw error;
+    } else {
+      return startFallbackSignIn();
     }
-  } else {
-    return startFallbackSignIn();
+  } finally {
+    _isLoggingIn = false;
   }
 }
 
