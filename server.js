@@ -165,7 +165,7 @@ app.get('/api/status', (req, res) => {
 
   res.json({
     status: 'online',
-    appVersion: '2.5.0-nightly',
+    appVersion: '2.6.0-anti-bot',
     engine: 'yt-dlp',
     ytdlpVersion,
     ffmpegVersion,
