@@ -49,6 +49,8 @@ try {
     const linuxDir = path.dirname(linuxDeno);
     if (!process.env.PATH.includes(linuxDir)) process.env.PATH = `${linuxDir}:${process.env.PATH}`;
   }
+}
+
 // Auto-upgrade yt-dlp to latest nightly build on startup
 try {
   const curVer = execSync('yt-dlp --version', { encoding: 'utf8' }).trim();
