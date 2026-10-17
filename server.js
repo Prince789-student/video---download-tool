@@ -63,8 +63,8 @@ function getYtDlpBaseArgs() {
   return args;
 }
 
-const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=web_embedded,android_vr,web,mweb,ios'];
-const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android,mweb'];
+const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=tv_embedded,web_embedded,android,mweb,ios'];
+const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=tv_embedded,android,mweb'];
 
 // In-memory job tracker for real-time progress
 const jobs = new Map();
@@ -156,7 +156,6 @@ function runProbe(targetUrl, useFallback = false) {
     const extractorArgs = useFallback ? FALLBACK_EXTRACTOR_ARGS : PRIMARY_EXTRACTOR_ARGS;
     const args = [
       '--dump-single-json',
-      '--flat-playlist',
       ...getYtDlpBaseArgs(),
       ...extractorArgs,
       targetUrl
