@@ -49,6 +49,12 @@ try {
     const linuxDir = path.dirname(linuxDeno);
     if (!process.env.PATH.includes(linuxDir)) process.env.PATH = `${linuxDir}:${process.env.PATH}`;
   }
+// Auto-update yt-dlp to latest nightly on startup
+try {
+  console.log('[Startup] Ensuring yt-dlp is latest nightly build...');
+  execSync('yt-dlp --update-to nightly', { stdio: 'ignore' });
+} catch (e) {
+  console.warn('[Startup] yt-dlp auto-update check:', e.message);
 }
 
 function getYtDlpBaseArgs() {
