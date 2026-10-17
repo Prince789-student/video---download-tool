@@ -5,3 +5,5 @@ temp_downloads/*
 .DS_Store
 Thumbs.db
 test_*
+cookies.txt
+cookies*.txt

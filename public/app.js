@@ -451,7 +451,8 @@ async function triggerDownload() {
         formatSpec: opt.formatSpec,
         ext: opt.ext,
         title: media.title,
-        audioBitrate: opt.bitrate ? opt.bitrate.replace(/\D/g, '') + 'K' : '320K'
+        audioBitrate: opt.bitrate ? opt.bitrate.replace(/\D/g, '') + 'K' : '320K',
+        usedFallback: media.usedFallback || false
       })
     });
 

@@ -94,8 +94,8 @@ function getYtDlpBaseArgs() {
   return args;
 }
 
-const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android'];
-const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android,ios'];
+const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android_creator'];
+const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=tv,mweb'];
 
 // In-memory job tracker for real-time progress
 const jobs = new Map();
@@ -201,7 +201,7 @@ function runProbe(targetUrl, useFallback = false) {
     ytdlp.stderr.on('data', (d) => { stderrData += d.toString(); });
 
     ytdlp.on('close', (code) => {
-      resolve({ code, stdoutData, stderrData });
+      resolve({ code, stdoutData, stderrData, usedFallback: Boolean(useFallback) });
     });
   });
 }
@@ -356,6 +356,7 @@ app.post('/api/info', async (req, res) => {
         views: data.view_count ? data.view_count.toLocaleString() : null,
         platform,
         webpageUrl: data.webpage_url || cleanUrl,
+        usedFallback: probeResult.usedFallback || false,
         options: {
           video: videoOptions,
           audio: audioOptions
@@ -400,12 +401,14 @@ app.post('/api/start-download', (req, res) => {
   jobs.set(jobId, job);
 
   // Prepare arguments for yt-dlp
+  const useFallbackClient = req.body.usedFallback || (formatSpec && String(formatSpec).trim() === '18');
+  const extractorArgs = useFallbackClient ? FALLBACK_EXTRACTOR_ARGS : PRIMARY_EXTRACTOR_ARGS;
   const args = [
     '--no-playlist',
     '--newline',
     '--progress',
     ...getYtDlpBaseArgs(),
-    ...PRIMARY_EXTRACTOR_ARGS
+    ...extractorArgs
   ];
 
   if (type === 'audio') {
