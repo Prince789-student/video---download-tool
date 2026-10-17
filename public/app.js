@@ -27,6 +27,10 @@ const errorBox = document.getElementById('errorBox');
 const errorTitle = document.getElementById('errorTitle');
 const errorMessage = document.getElementById('errorMessage');
 const closeErrorBtn = document.getElementById('closeErrorBtn');
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const themeLabel = document.getElementById('themeLabel');
+const sunIcon = document.querySelector('.sun-icon');
+const moonIcon = document.querySelector('.moon-icon');
 
 // Media Result Elements
 const mediaResultSection = document.getElementById('mediaResultSection');
@@ -292,6 +296,7 @@ async function analyzeMedia() {
   fetchBtn.querySelector('.btn-arrow').classList.add('hidden');
   fetchBtn.querySelector('.btn-text').textContent = 'Analyzing...';
 
+  try {
     let res;
     try {
       res = await fetch(`${getApiBase()}/api/info`, {

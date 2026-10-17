@@ -569,18 +569,12 @@ app.get('/api/file/:jobId', (req, res) => {
     return res.status(404).send('Download file not found or has already expired.');
   }
 
-  const stat = fs.statSync(job.filePath);
-  const ext = path.extname(job.filePath).toLowerCase();
-  const contentType = ext === '.mp3' ? 'audio/mpeg' : ext === '.m4a' ? 'audio/mp4' : 'video/mp4';
-
-  res.writeHead(200, {
-    'Content-Type': contentType,
-    'Content-Length': stat.size,
-    'Content-Disposition': `attachment; filename="${encodeURIComponent(job.filename)}"`,
+  res.download(job.filePath, job.filename, (err) => {
+    if (err && !res.headersSent) {
+      console.error(`[Download Send Error] Job ${jobId}:`, err.message);
+      res.status(500).send('Error streaming download file.');
+    }
   });
-
-  const readStream = fs.createReadStream(job.filePath);
-  readStream.pipe(res);
 });
 
 // API 6: Save User Profile (Name, Phone Number, Email)
