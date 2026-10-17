@@ -11,12 +11,13 @@
  */
 
 window.FIREBASE_CONFIG = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDjEXgOXkqQPC2-ksht7SkQCb_PgxwXjPE",
+  authDomain: "my-all--project.firebaseapp.com",
+  projectId: "my-all--project",
+  storageBucket: "my-all--project.firebasestorage.app",
+  messagingSenderId: "890038047586",
+  appId: "1:890038047586:web:83734ff29541c63b98923b",
+  measurementId: "G-FWWQPGDEWB"
 };
 
 // Global Auth State
