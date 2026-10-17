@@ -292,18 +292,32 @@ async function analyzeMedia() {
   fetchBtn.querySelector('.btn-arrow').classList.add('hidden');
   fetchBtn.querySelector('.btn-text').textContent = 'Analyzing...';
 
-  try {
-    const res = await fetch(`${getApiBase()}/api/info`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
-
-    const data = await res.json();
+    let res;
+    try {
+      res = await fetch(`${getApiBase()}/api/info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+    } catch (netErr) {
+      throw new Error(`Cannot reach Backend (${getApiBase()}). Free Render instances may take ~45 seconds to spin up. Please retry in a moment.`);
+    }
 
     if (!res.ok) {
-      throw new Error(data.error || 'Failed to inspect media URL.');
+      if (res.status === 404) {
+        throw new Error(`Backend service not found at ${getApiBase()}. Please verify your Render service deployment URL.`);
+      }
+      let errText = '';
+      try {
+        const errJson = await res.json();
+        errText = errJson.error || errJson.message;
+      } catch (e) {
+        errText = await res.text();
+      }
+      throw new Error(errText || `Server responded with status ${res.status}`);
     }
+
+    const data = await res.json();
 
     state.currentMedia = data;
     renderMediaResult(data);
