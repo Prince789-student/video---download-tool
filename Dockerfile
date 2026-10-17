@@ -1,21 +1,20 @@
-# Production Dockerfile for OmniStream Downloader on Render
-FROM node:20-bullseye-slim
+# Production Dockerfile for OmniStream Downloader on Render (Debian 12 Bookworm)
+FROM node:20-bookworm-slim
 
-# Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies: Python3, pip, ffmpeg, curl, ca-certificates, unzip
+# Install system dependencies: ffmpeg, curl, ca-certificates, unzip, python3
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
     ffmpeg \
     curl \
     ca-certificates \
     unzip \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install latest yt-dlp
-RUN pip3 install --no-cache-dir -U yt-dlp
+# Install latest standalone yt-dlp binary directly
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp
 
 # Install Deno for yt-dlp JavaScript challenge solving
 RUN curl -fsSL https://deno.land/install.sh | sh
