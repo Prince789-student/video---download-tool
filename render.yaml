@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: omnistream-downloader-api
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    healthCheckPath: /api/status
+    envVars:
+      - key: PORT
+        value: 10000

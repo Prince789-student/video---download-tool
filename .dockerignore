@@ -1,0 +1,8 @@
+node_modules
+npm-debug.log
+temp_downloads/*
+!temp_downloads/.gitkeep
+.git
+.gitignore
+*.log
+test_*
