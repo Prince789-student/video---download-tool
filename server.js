@@ -49,12 +49,22 @@ try {
     const linuxDir = path.dirname(linuxDeno);
     if (!process.env.PATH.includes(linuxDir)) process.env.PATH = `${linuxDir}:${process.env.PATH}`;
   }
-// Auto-update yt-dlp to latest nightly on startup
+// Auto-upgrade yt-dlp to latest nightly build on startup
 try {
-  console.log('[Startup] Ensuring yt-dlp is latest nightly build...');
-  execSync('yt-dlp --update-to nightly', { stdio: 'ignore' });
+  const curVer = execSync('yt-dlp --version', { encoding: 'utf8' }).trim();
+  console.log('[Startup] Detected yt-dlp version:', curVer);
+  if (curVer.includes('2026.08') || curVer.includes('2024') || curVer.includes('2025')) {
+    console.log('[Startup] Outdated yt-dlp detected! Upgrading to latest nightly build...');
+    try {
+      execSync('curl -sL https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp', { stdio: 'inherit' });
+      const newVer = execSync('yt-dlp --version', { encoding: 'utf8' }).trim();
+      console.log('[Startup] Successfully upgraded yt-dlp to nightly version:', newVer);
+    } catch (curlErr) {
+      console.warn('[Startup] Direct curl upgrade failed:', curlErr.message);
+    }
+  }
 } catch (e) {
-  console.warn('[Startup] yt-dlp auto-update check:', e.message);
+  console.warn('[Startup] yt-dlp check warning:', e.message);
 }
 
 function getYtDlpBaseArgs() {
@@ -140,6 +150,7 @@ app.get('/api/status', (req, res) => {
 
   res.json({
     status: 'online',
+    appVersion: '2.5.0-nightly',
     engine: 'yt-dlp',
     ytdlpVersion,
     ffmpegVersion,
