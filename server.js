@@ -530,6 +530,57 @@ app.get('/api/file/:jobId', (req, res) => {
   readStream.pipe(res);
 });
 
+// API 6: Save User Profile (Name, Phone Number, Email)
+const USERS_FILE = path.join(TEMP_DIR, 'users.json');
+
+app.post('/api/save-user', (req, res) => {
+  const { uid, displayName, email, phoneNumber, photoURL } = req.body;
+  if (!uid) {
+    return res.status(400).json({ error: 'Missing UID' });
+  }
+
+  let users = {};
+  if (fs.existsSync(USERS_FILE)) {
+    try {
+      users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+    } catch (e) {
+      users = {};
+    }
+  }
+
+  users[uid] = {
+    uid,
+    displayName: displayName || 'User',
+    email: email || '',
+    phoneNumber: phoneNumber || '',
+    photoURL: photoURL || '',
+    updatedAt: new Date().toISOString()
+  };
+
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    console.log(`[User Saved] UID: ${uid}, Name: ${displayName}, Phone: ${phoneNumber}`);
+    return res.json({ success: true, user: users[uid] });
+  } catch (err) {
+    console.error('[User Save Error]', err);
+    return res.status(500).json({ error: 'Failed to save user data' });
+  }
+});
+
+app.get('/api/user/:uid', (req, res) => {
+  const { uid } = req.params;
+  if (!fs.existsSync(USERS_FILE)) {
+    return res.status(404).json({ error: 'No users found' });
+  }
+  try {
+    const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+    if (users[uid]) {
+      return res.json(users[uid]);
+    }
+  } catch (e) {}
+  return res.status(404).json({ error: 'User not found' });
+});
+
 // Start Server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`=======================================================`);

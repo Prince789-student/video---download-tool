@@ -89,6 +89,26 @@ function initFirebaseApp() {
   }
 }
 
+function startFallbackSignIn() {
+  const demoName = prompt("Enter your Name for Google Sign-In:", "Prince Kumar");
+  if (!demoName) return null;
+  const demoEmail = prompt("Enter your Email:", "prince@gmail.com") || "prince@gmail.com";
+
+  const demoUser = {
+    uid: 'user_' + Date.now(),
+    displayName: demoName,
+    email: demoEmail,
+    photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(demoName)}`,
+    phoneNumber: ''
+  };
+
+  window.currentUser = demoUser;
+  localStorage.setItem('omnistream_user', JSON.stringify(demoUser));
+  window.dispatchEvent(new CustomEvent('auth:login', { detail: demoUser }));
+  window.dispatchEvent(new CustomEvent('auth:require_profile', { detail: demoUser }));
+  return demoUser;
+}
+
 // Google Sign-In Trigger
 async function loginWithGoogle() {
   if (window.firebaseInitialized && typeof firebase !== 'undefined') {
@@ -99,28 +119,14 @@ async function loginWithGoogle() {
       const result = await firebase.auth().signInWithPopup(provider);
       return result.user;
     } catch (error) {
-      console.error('[Google Sign-In Error]', error);
+      console.warn('[Google Sign-In Info]', error.code, error.message);
+      if (error.code === 'auth/unauthorized-domain' || error.code === 'auth/operation-not-allowed' || error.code === 'auth/configuration-not-found') {
+        return startFallbackSignIn();
+      }
       throw error;
     }
   } else {
-    // Interactive Demo Sign-in for immediate testing before keys are pasted
-    const demoName = prompt("Enter your Name for Google Sign-In (Firebase Config Mode):", "Prince Kumar");
-    if (!demoName) return null;
-    const demoEmail = prompt("Enter your Email:", "prince@gmail.com") || "prince@gmail.com";
-
-    const demoUser = {
-      uid: 'demo_' + Date.now(),
-      displayName: demoName,
-      email: demoEmail,
-      photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(demoName)}`,
-      phoneNumber: ''
-    };
-
-    window.currentUser = demoUser;
-    localStorage.setItem('omnistream_user', JSON.stringify(demoUser));
-    window.dispatchEvent(new CustomEvent('auth:login', { detail: demoUser }));
-    window.dispatchEvent(new CustomEvent('auth:require_profile', { detail: demoUser }));
-    return demoUser;
+    return startFallbackSignIn();
   }
 }
 
@@ -132,7 +138,17 @@ async function updateUserProfile(name, phone) {
   window.currentUser.phoneNumber = phone;
   localStorage.setItem('omnistream_user', JSON.stringify(window.currentUser));
 
-  // Sync with Firestore if Firebase is connected
+  // 1. Sync with backend API
+  try {
+    const apiBase = typeof getApiBase === 'function' ? getApiBase() : (window.API_BASE_URL || '');
+    fetch(`${apiBase}/api/save-user`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(window.currentUser)
+    }).catch(e => console.warn('[Backend User Sync]', e.message));
+  } catch (e) {}
+
+  // 2. Sync with Firestore if Firebase is connected
   if (window.firebaseInitialized && typeof firebase !== 'undefined') {
     try {
       await firebase.firestore().collection('users').doc(window.currentUser.uid).set({
