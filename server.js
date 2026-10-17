@@ -81,8 +81,8 @@ function getYtDlpBaseArgs() {
   return args;
 }
 
-const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android,ios,web'];
-const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android,mweb'];
+const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android'];
+const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android,ios'];
 
 // In-memory job tracker for real-time progress
 const jobs = new Map();
