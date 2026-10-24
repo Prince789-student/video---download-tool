@@ -387,6 +387,19 @@ app.post('/api/info', async (req, res) => {
         }
       ];
 
+      // Find direct CDN stream if available (for zero-bandwidth instant direct save)
+      let directUrl = null;
+      if (typeof data.url === 'string' && data.url.startsWith('http')) {
+        directUrl = data.url;
+      } else if (rawFormats && rawFormats.length > 0) {
+        // Find single format with both audio and video pre-muxed
+        const combined = rawFormats.filter(f => f.url && f.vcodec !== 'none' && f.acodec !== 'none');
+        if (combined.length > 0) {
+          combined.sort((a, b) => (b.height || 0) - (a.height || 0));
+          directUrl = combined[0].url;
+        }
+      }
+
       return res.json({
         title: data.title || 'Untitled Media',
         thumbnail: data.thumbnail || (data.thumbnails && data.thumbnails.length > 0 ? data.thumbnails[data.thumbnails.length - 1].url : ''),
@@ -398,6 +411,7 @@ app.post('/api/info', async (req, res) => {
         platform,
         webpageUrl: data.webpage_url || cleanUrl,
         usedFallback: probeResult.usedFallback || false,
+        directUrl: directUrl || null,
         options: {
           video: videoOptions,
           audio: audioOptions

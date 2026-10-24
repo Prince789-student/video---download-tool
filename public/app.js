@@ -636,6 +636,17 @@ function renderMediaResult(media) {
 
   renderQualityOptions();
 
+  // Toggle Instant Direct CDN Download button if direct URL is available
+  const directFastDownloadBtn = document.getElementById('directFastDownloadBtn');
+  if (directFastDownloadBtn) {
+    if (media.directUrl && typeof media.directUrl === 'string' && media.directUrl.startsWith('http')) {
+      directFastDownloadBtn.href = media.directUrl;
+      directFastDownloadBtn.classList.remove('hidden');
+    } else {
+      directFastDownloadBtn.classList.add('hidden');
+    }
+  }
+
   mediaResultSection.classList.remove('hidden');
   mediaResultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

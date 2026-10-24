@@ -263,8 +263,17 @@
               </svg>
               <span id="downloadBtnText">Download Selected Format</span>
             </button>
+
+            <!-- Optional Instant Direct CDN Download (Saves Cloud Bandwidth) -->
+            <a class="direct-fast-btn hidden" id="directFastDownloadBtn" target="_blank" rel="noopener noreferrer" download>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              <span>Instant Direct Save (Zero Wait & 0 MB Server Bandwidth)</span>
+            </a>
+
             <div class="download-footnote">
-              <span>⚡ Merged with FFmpeg for 100% synchronized audio & video.</span>
+              <span>⚡ Cloud Engine ready for 100% synchronized audio & video.</span>
             </div>
           </div>
         </div>
@@ -637,8 +646,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <!-- Application Scripts -->
-  <script src="firebase-config.js?v=3.6"></script>
-  <script src="config.js?v=3.6"></script>
-  <script src="app.js?v=3.6"></script>
+  <script src="firebase-config.js?v=3.7"></script>
+  <script src="config.js?v=3.7"></script>
+  <script src="app.js?v=3.7"></script>
 </body>
 </html>
