@@ -147,7 +147,7 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // Keep-Alive Mechanism: Pings the public Render URL every 10 minutes to prevent 15-minute idle sleep
-const PUBLIC_SERVICE_URL = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || 'https://video-download-tool-m694.onrender.com';
+const PUBLIC_SERVICE_URL = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || 'https://video-download-tool-9u4x.onrender.com';
 const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000; // 10 minutes (Render sleeps after 15 minutes)
 
 setInterval(async () => {

@@ -252,7 +252,7 @@ function updateEngineUI(base, isOnline, latency, data) {
     }
 
     if (useLocalServerBtn && useRenderServerBtn) {
-      const defaultRender = window.DEFAULT_RENDER_URL || 'https://video-download-tool-m694.onrender.com';
+      const defaultRender = window.DEFAULT_RENDER_URL || 'https://video-download-tool-9u4x.onrender.com';
       useLocalServerBtn.textContent = isLocal ? 'Active ✓' : 'Connect';
       useLocalServerBtn.classList.toggle('connected', isLocal);
       useRenderServerBtn.textContent = !isLocal && base === defaultRender ? 'Active ✓' : 'Connect';
@@ -350,7 +350,7 @@ function setupEventListeners() {
   }
   if (useRenderServerBtn) {
     useRenderServerBtn.addEventListener('click', () => {
-      switchToBackend(window.DEFAULT_RENDER_URL || 'https://video-download-tool-m694.onrender.com');
+      switchToBackend(window.DEFAULT_RENDER_URL || 'https://video-download-tool-9u4x.onrender.com');
     });
   }
   if (saveBackendBtn) {
@@ -366,7 +366,7 @@ function setupEventListeners() {
   if (resetBackendBtn) {
     resetBackendBtn.addEventListener('click', () => {
       localStorage.removeItem('omnistream_backend_url');
-      window.API_BASE_URL = window.DEFAULT_RENDER_URL || 'https://video-download-tool-m694.onrender.com';
+      window.API_BASE_URL = window.DEFAULT_RENDER_URL || 'https://video-download-tool-9u4x.onrender.com';
       checkEngineStatus(window.API_BASE_URL);
       closeServerSettings();
     });
@@ -541,7 +541,7 @@ async function analyzeMedia() {
     if (isRenderSuspended) {
       showError(
         'Cloud Server Suspended on Render',
-        'Your cloud backend (video-download-tool-m694.onrender.com) is currently suspended because the monthly free hours expired or it was paused. You can use your PC\'s Local Engine with start.bat (zero limits, 100% free), or resume it in Render dashboard.',
+        'Your cloud backend (video-download-tool-9u4x.onrender.com) is currently suspended because the monthly free hours expired or it was paused. You can use your PC\'s Local Engine with start.bat (zero limits, 100% free), or resume it in Render dashboard.',
         [
           {
             text: '⚡ Connect to Local Engine (localhost:4000)',

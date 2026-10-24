@@ -13,5 +13,5 @@ jobs:
       - name: Ping Render Backend
         run: |
           echo "Sending keep-alive ping to Render backend..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 "https://video-download-tool-m694.onrender.com/api/status" || echo "000")
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 "https://video-download-tool-9u4x.onrender.com/api/status" || echo "000")
           echo "Render response status: $HTTP_STATUS"
