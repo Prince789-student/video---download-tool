@@ -72,23 +72,30 @@ const emptyHistory = document.getElementById('emptyHistory');
 const historyCount = document.getElementById('historyCount');
 
 // Server Settings Elements
-const apiSettingsBtn = document.getElementById('apiSettingsBtn');
+const errorActions = document.getElementById('errorActions');
 const serverSettingsOverlay = document.getElementById('serverSettingsOverlay');
 const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+const modalStatusPill = document.getElementById('modalStatusPill');
+const modalActiveUrl = document.getElementById('modalActiveUrl');
+const modalStatusMeta = document.getElementById('modalStatusMeta');
+const selectLocalServerCard = document.getElementById('selectLocalServerCard');
+const selectRenderServerCard = document.getElementById('selectRenderServerCard');
+const useLocalServerBtn = document.getElementById('useLocalServerBtn');
+const useRenderServerBtn = document.getElementById('useRenderServerBtn');
 const backendUrlInput = document.getElementById('backendUrlInput');
 const saveBackendBtn = document.getElementById('saveBackendBtn');
 const resetBackendBtn = document.getElementById('resetBackendBtn');
 
-// Helper to get active API Base URL (Cross-environment Vercel + Render + Localhost)
+// Helper to get active API Base URL (Supports user selection > config default > localhost)
 function getApiBase() {
-  if (typeof window.API_BASE_URL === 'string' && window.API_BASE_URL.trim()) {
-    return window.API_BASE_URL.trim().replace(/\/+$/, '');
-  }
   const stored = localStorage.getItem('omnistream_backend_url');
   if (stored && stored.trim()) {
     return stored.trim().replace(/\/+$/, '');
   }
-  return '';
+  if (typeof window.API_BASE_URL === 'string' && window.API_BASE_URL.trim()) {
+    return window.API_BASE_URL.trim().replace(/\/+$/, '');
+  }
+  return window.location.origin;
 }
 
 // Initialize
@@ -168,25 +175,89 @@ function updatePlatformBadge() {
   }
 }
 
-// Check Backend Engine Status (Clean, friendly status without cluttering technical strings)
-async function checkEngineStatus() {
-  const base = getApiBase();
+// Check Backend Engine Status & Auto-Detect Local PC Engine
+async function checkEngineStatus(targetBase = null) {
+  const base = targetBase || getApiBase();
+  const startTime = Date.now();
+  let isOnline = false;
+  let statusData = null;
+
   try {
-    const res = await fetch(`${base}/api/status`);
-    const data = await res.json();
-    if (data.status === 'online') {
-      engineStatusText.textContent = 'Online';
-      engineStatusBadge.classList.remove('offline');
-      engineStatusBadge.title = base ? `Connected to ${base}` : 'Universal Downloader Engine Ready';
-    } else {
-      throw new Error('Not ready');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${base}/api/status`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      statusData = await res.json();
+      if (statusData.status === 'online') {
+        isOnline = true;
+      }
     }
   } catch (err) {
-    engineStatusText.textContent = 'Offline';
-    engineStatusBadge.classList.add('offline');
-    engineStatusBadge.title = base 
-      ? `Cannot reach backend at ${base} — click Server to reconfigure` 
-      : 'Server disconnected — run start.bat locally or click Server to configure Render URL';
+    isOnline = false;
+  }
+
+  // If configured base failed AND it's not localhost, check if local PC engine (start.bat) is running!
+  if (!isOnline && !base.includes('localhost') && !base.includes('127.0.0.1')) {
+    try {
+      const localController = new AbortController();
+      const localTimeout = setTimeout(() => localController.abort(), 1200);
+      const localRes = await fetch('http://localhost:4000/api/status', { signal: localController.signal });
+      clearTimeout(localTimeout);
+      if (localRes.ok) {
+        const localData = await localRes.json();
+        if (localData.status === 'online') {
+          console.log('[Engine] Auto-detected active Local PC Engine at http://localhost:4000');
+          localStorage.setItem('omnistream_backend_url', 'http://localhost:4000');
+          return checkEngineStatus('http://localhost:4000');
+        }
+      }
+    } catch (e) {
+      // Local engine not running
+    }
+  }
+
+  const latency = Date.now() - startTime;
+  updateEngineUI(base, isOnline, latency, statusData);
+  return { ok: isOnline, latency, data: statusData };
+}
+
+function updateEngineUI(base, isOnline, latency, data) {
+  const isLocal = base.includes('localhost') || base.includes('127.0.0.1');
+
+  if (engineStatusText && engineStatusBadge) {
+    if (isOnline) {
+      engineStatusText.textContent = isLocal ? 'Local Engine (Fast)' : 'Online';
+      engineStatusBadge.classList.remove('offline');
+      engineStatusBadge.title = `Connected to ${base} (${latency}ms) — Click to configure`;
+    } else {
+      engineStatusText.textContent = 'Server Offline';
+      engineStatusBadge.classList.add('offline');
+      engineStatusBadge.title = `Cannot reach backend at ${base} — Click to switch or resume`;
+    }
+  }
+
+  // Update Server Settings Modal details if open
+  if (modalStatusPill && modalActiveUrl && modalStatusMeta) {
+    modalActiveUrl.textContent = base;
+    if (isOnline) {
+      modalStatusPill.textContent = '● Online';
+      modalStatusPill.className = 'status-pill-live';
+      modalStatusMeta.textContent = `Latency: ${latency}ms | Engine: ${data?.engine || 'yt-dlp + FFmpeg'} | Ver: ${data?.appVersion || '2.8'}`;
+    } else {
+      modalStatusPill.textContent = '● Disconnected / Suspended';
+      modalStatusPill.className = 'status-pill-live offline';
+      modalStatusMeta.textContent = 'Server unreachable. Run start.bat locally or resume in Render dashboard.';
+    }
+
+    if (useLocalServerBtn && useRenderServerBtn) {
+      const defaultRender = window.DEFAULT_RENDER_URL || 'https://video-download-tool-m694.onrender.com';
+      useLocalServerBtn.textContent = isLocal ? 'Active ✓' : 'Connect';
+      useLocalServerBtn.classList.toggle('connected', isLocal);
+      useRenderServerBtn.textContent = !isLocal && base === defaultRender ? 'Active ✓' : 'Connect';
+      useRenderServerBtn.classList.toggle('connected', !isLocal && base === defaultRender);
+    }
   }
 }
 
@@ -259,21 +330,113 @@ function setupEventListeners() {
       urlInput.focus();
     });
   });
+
+  // Server Engine Switcher Modal Listeners
+  if (engineStatusBadge) {
+    engineStatusBadge.addEventListener('click', openServerSettings);
+  }
+  if (closeSettingsBtn) {
+    closeSettingsBtn.addEventListener('click', closeServerSettings);
+  }
+  if (serverSettingsOverlay) {
+    serverSettingsOverlay.addEventListener('click', (e) => {
+      if (e.target === serverSettingsOverlay) closeServerSettings();
+    });
+  }
+  if (useLocalServerBtn) {
+    useLocalServerBtn.addEventListener('click', () => {
+      switchToBackend('http://localhost:4000');
+    });
+  }
+  if (useRenderServerBtn) {
+    useRenderServerBtn.addEventListener('click', () => {
+      switchToBackend(window.DEFAULT_RENDER_URL || 'https://video-download-tool-m694.onrender.com');
+    });
+  }
+  if (saveBackendBtn) {
+    saveBackendBtn.addEventListener('click', () => {
+      const val = (backendUrlInput.value || '').trim();
+      if (!val || (!val.startsWith('http://') && !val.startsWith('https://'))) {
+        alert('Please enter a valid URL starting with http:// or https://');
+        return;
+      }
+      switchToBackend(val);
+    });
+  }
+  if (resetBackendBtn) {
+    resetBackendBtn.addEventListener('click', () => {
+      localStorage.removeItem('omnistream_backend_url');
+      window.API_BASE_URL = window.DEFAULT_RENDER_URL || 'https://video-download-tool-m694.onrender.com';
+      checkEngineStatus(window.API_BASE_URL);
+      closeServerSettings();
+    });
+  }
 }
 
-// Show Error Notice
-function showError(title, message) {
+// Server Modal Control Functions
+function openServerSettings() {
+  if (!serverSettingsOverlay) return;
+  const current = getApiBase();
+  if (backendUrlInput) backendUrlInput.value = current;
+  serverSettingsOverlay.classList.remove('hidden');
+  checkEngineStatus(current);
+}
+
+function closeServerSettings() {
+  if (serverSettingsOverlay) serverSettingsOverlay.classList.add('hidden');
+}
+
+function switchToBackend(url) {
+  if (!url || typeof url !== 'string') return;
+  const cleanUrl = url.trim().replace(/\/+$/, '');
+  localStorage.setItem('omnistream_backend_url', cleanUrl);
+  window.API_BASE_URL = cleanUrl;
+  checkEngineStatus(cleanUrl);
+  closeServerSettings();
+}
+
+// Show Error Notice with Optional Action Buttons
+function showError(title, message, actions = []) {
   errorTitle.textContent = title;
   errorMessage.textContent = message;
+
+  if (errorActions) {
+    errorActions.innerHTML = '';
+    if (actions && actions.length > 0) {
+      errorActions.classList.remove('hidden');
+      actions.forEach(act => {
+        if (act.href) {
+          const a = document.createElement('a');
+          a.href = act.href;
+          a.target = act.target || '_self';
+          if (act.target === '_blank') a.rel = 'noopener';
+          a.className = `alert-btn ${act.type || 'secondary'}`;
+          a.textContent = act.text;
+          errorActions.appendChild(a);
+        } else {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `alert-btn ${act.type || 'secondary'}`;
+          btn.textContent = act.text;
+          btn.addEventListener('click', act.onClick);
+          errorActions.appendChild(btn);
+        }
+      });
+    } else {
+      errorActions.classList.add('hidden');
+    }
+  }
+
   errorBox.classList.remove('hidden');
   errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function hideError() {
   errorBox.classList.add('hidden');
+  if (errorActions) errorActions.classList.add('hidden');
 }
 
-// Analyze Media API Call
+// Analyze Media with Auto-Retry and Multi-Backend Fallback
 async function analyzeMedia() {
   const url = urlInput.value.trim();
   if (!url) {
@@ -297,37 +460,143 @@ async function analyzeMedia() {
   fetchBtn.querySelector('.btn-text').textContent = 'Analyzing...';
 
   try {
-    let res;
-    try {
-      res = await fetch(`${getApiBase()}/api/info`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-    } catch (netErr) {
-      throw new Error(`Cannot reach Backend (${getApiBase()}). Free Render instances may take ~45 seconds to spin up. Please retry in a moment.`);
-    }
+    let currentBase = getApiBase();
+    let data = null;
+    let isRenderSuspended = false;
 
-    if (!res.ok) {
-      if (res.status === 404) {
-        throw new Error(`Backend service not found at ${getApiBase()}. Please verify your Render service deployment URL.`);
+    // Retry loop for sleeping instances
+    const maxRetries = currentBase.includes('localhost') ? 1 : 3;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      if (attempt > 1) {
+        fetchBtn.querySelector('.btn-text').textContent = `Waking server (${attempt}/${maxRetries})...`;
       }
-      let errText = '';
+
       try {
-        const errJson = await res.json();
-        errText = errJson.error || errJson.message;
-      } catch (e) {
-        errText = await res.text();
+        const controller = new AbortController();
+        const timeoutMs = currentBase.includes('localhost') ? 10000 : (attempt === 1 ? 14000 : 25000);
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        const res = await fetch(`${currentBase}/api/info`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        // Check if Render suspended
+        if (res.status === 503) {
+          const bodyTxt = await res.text();
+          if (bodyTxt.includes('suspended by its owner') || res.headers.get('x-render-routing')?.includes('suspend')) {
+            isRenderSuspended = true;
+            break; // Stop retrying suspended Render, check local or show action card
+          }
+        }
+
+        if (!res.ok) {
+          let errText = '';
+          try {
+            const errJson = await res.json();
+            errText = errJson.error || errJson.message;
+          } catch {
+            errText = await res.text();
+          }
+          throw new Error(errText || `Server responded with status ${res.status}`);
+        }
+
+        data = await res.json();
+        break; // Successfully received data!
+      } catch (reqErr) {
+        if (isRenderSuspended) break;
+        if (attempt === maxRetries) {
+          // If cloud failed, check if local engine is running as auto-fallback!
+          if (!currentBase.includes('localhost')) {
+            try {
+              fetchBtn.querySelector('.btn-text').textContent = 'Connecting to Local Engine...';
+              const localProbe = await fetch('http://localhost:4000/api/status', { signal: AbortSignal.timeout(1500) });
+              if (localProbe.ok) {
+                switchToBackend('http://localhost:4000');
+                const localRes = await fetch('http://localhost:4000/api/info', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ url })
+                });
+                if (localRes.ok) {
+                  data = await localRes.json();
+                  break;
+                }
+              }
+            } catch (e) {
+              // Local not available
+            }
+          }
+          throw reqErr;
+        }
+        // Wait 3.5s before retrying cold start
+        await new Promise(r => setTimeout(r, 3500));
       }
-      throw new Error(errText || `Server responded with status ${res.status}`);
     }
 
-    const data = await res.json();
+    if (isRenderSuspended) {
+      showError(
+        'Cloud Server Suspended on Render',
+        'Your cloud backend (video-download-tool-m694.onrender.com) is currently suspended because the monthly free hours expired or it was paused. You can use your PC\'s Local Engine with start.bat (zero limits, 100% free), or resume it in Render dashboard.',
+        [
+          {
+            text: '⚡ Connect to Local Engine (localhost:4000)',
+            type: 'primary',
+            onClick: () => {
+              switchToBackend('http://localhost:4000');
+              analyzeMedia();
+            }
+          },
+          {
+            text: '☁️ Resume on Render Dashboard ↗',
+            type: 'secondary',
+            href: 'https://dashboard.render.com',
+            target: '_blank'
+          },
+          {
+            text: '⚙️ Server Settings',
+            type: 'secondary',
+            onClick: openServerSettings
+          }
+        ]
+      );
+      return;
+    }
+
+    if (!data) {
+      showError(
+        'Cannot Reach Download Engine',
+        'Could not establish connection to the download server. If using cloud, it may be paused. If on PC, make sure start.bat is running.',
+        [
+          {
+            text: '⚡ Use Local Engine (localhost:4000)',
+            type: 'primary',
+            onClick: () => {
+              switchToBackend('http://localhost:4000');
+              analyzeMedia();
+            }
+          },
+          {
+            text: '⚙️ Configure Server',
+            type: 'secondary',
+            onClick: openServerSettings
+          }
+        ]
+      );
+      return;
+    }
 
     state.currentMedia = data;
     renderMediaResult(data);
   } catch (err) {
-    showError('Could Not Fetch Video', err.message || 'The server could not access this media. Ensure the video is public.');
+    showError(
+      'Could Not Fetch Video',
+      err.message || 'The server could not access this media. Ensure the video is public.'
+    );
   } finally {
     fetchBtn.disabled = false;
     fetchSpinner.classList.add('hidden');
@@ -737,11 +1006,16 @@ if (profileForm) {
         photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
         phoneNumber: phone
       };
-      localStorage.setItem('omnistream_user', JSON.stringify(window.currentUser));
-      window.dispatchEvent(new CustomEvent('auth:login', { detail: window.currentUser }));
+    } else {
+      window.currentUser.displayName = name;
+      window.currentUser.phoneNumber = phone;
+      if (email) window.currentUser.email = email;
     }
 
-    await updateUserProfile(name, phone);
+    localStorage.setItem('omnistream_user', JSON.stringify(window.currentUser));
+    window.dispatchEvent(new CustomEvent('auth:login', { detail: window.currentUser }));
+
+    await updateUserProfile(name, phone, email);
     profileModalOverlay.classList.add('hidden');
   });
 }
