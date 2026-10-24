@@ -189,7 +189,7 @@ async function checkEngineStatus(targetBase = null) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
     const res = await fetch(`${base}/api/status`, { signal: controller.signal });
     clearTimeout(timeoutId);
 
