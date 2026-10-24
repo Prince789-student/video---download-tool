@@ -146,6 +146,22 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
+// Keep-Alive Mechanism: Pings the public Render URL every 10 minutes to prevent 15-minute idle sleep
+const PUBLIC_SERVICE_URL = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || 'https://video-download-tool-m694.onrender.com';
+const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000; // 10 minutes (Render sleeps after 15 minutes)
+
+setInterval(async () => {
+  // Only ping if running in cloud production (Render / Port environment)
+  if (process.env.RENDER || process.env.RENDER_EXTERNAL_URL || process.env.NODE_ENV === 'production') {
+    try {
+      const res = await fetch(`${PUBLIC_SERVICE_URL}/api/status`);
+      console.log(`[Keep-Alive] Pinged public router (${PUBLIC_SERVICE_URL}/api/status) -> Status ${res.status}`);
+    } catch (err) {
+      console.warn('[Keep-Alive] Ping notice:', err.message);
+    }
+  }
+}, KEEP_ALIVE_INTERVAL);
+
 // API 1: System Info & Diagnostics
 app.get('/api/status', (req, res) => {
   let ytdlpVersion = 'Installed';

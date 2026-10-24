@@ -1,0 +1,17 @@
+name: Render 24/7 Keep-Alive Pinger
+
+on:
+  schedule:
+    # Run every 10 minutes to prevent Render free instance from 15-min idle sleep
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Backend
+        run: |
+          echo "Sending keep-alive ping to Render backend..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 "https://video-download-tool-m694.onrender.com/api/status" || echo "000")
+          echo "Render response status: $HTTP_STATUS"
