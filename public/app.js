@@ -90,12 +90,17 @@ const resetBackendBtn = document.getElementById('resetBackendBtn');
 function getApiBase() {
   const stored = localStorage.getItem('omnistream_backend_url');
   if (stored && stored.trim()) {
-    return stored.trim().replace(/\/+$/, '');
+    // Purge old dead m694 URL from localStorage if present
+    if (stored.includes('video-download-tool-m694') || stored.includes('m694')) {
+      localStorage.removeItem('omnistream_backend_url');
+    } else {
+      return stored.trim().replace(/\/+$/, '');
+    }
   }
   if (typeof window.API_BASE_URL === 'string' && window.API_BASE_URL.trim()) {
     return window.API_BASE_URL.trim().replace(/\/+$/, '');
   }
-  return window.location.origin;
+  return window.DEFAULT_RENDER_URL || "https://video-download-tool-9u4x.onrender.com";
 }
 
 // Initialize
