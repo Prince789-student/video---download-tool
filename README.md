@@ -1,3 +1,13 @@
+---
+title: Video Download Tool
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 4000
+pinned: false
+---
+
 # OmniStream PRO — Universal Video & Audio Downloader
 
 A full-stack, media downloader web application built with Node.js, Express, HTML5, Vanilla CSS3, and backed by the local power of **yt-dlp** and **FFmpeg**.
