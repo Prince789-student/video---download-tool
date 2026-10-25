@@ -94,9 +94,9 @@ function getYtDlpBaseArgs() {
   return args;
 }
 
-const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=mweb,tv,ios'];
-const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android,web,tv'];
-const RETRY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=ios,web'];
+const PRIMARY_EXTRACTOR_ARGS = []; // Default intelligent client rotation (tv_samsung, visionos, web)
+const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=tv,android'];
+const RETRY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android_vr,web'];
 
 // In-memory job tracker for real-time progress
 const jobs = new Map();
@@ -228,12 +228,26 @@ function runProbe(targetUrl, tier = 0) {
     const ytdlp = spawn('yt-dlp', args, { windowsHide: true });
     let stdoutData = '';
     let stderrData = '';
+    let settled = false;
+
+    // Hard timeout after 22 seconds to prevent probe hang
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        try { ytdlp.kill('SIGKILL'); } catch (e) {}
+        resolve({ code: -1, stdoutData: '', stderrData: 'Probe timed out after 22s', tier });
+      }
+    }, 22000);
 
     ytdlp.stdout.on('data', (d) => { stdoutData += d.toString(); });
     ytdlp.stderr.on('data', (d) => { stderrData += d.toString(); });
 
     ytdlp.on('close', (code) => {
-      resolve({ code, stdoutData, stderrData, tier });
+      clearTimeout(timer);
+      if (!settled) {
+        settled = true;
+        resolve({ code, stdoutData, stderrData, tier });
+      }
     });
   });
 }

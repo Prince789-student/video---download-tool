@@ -189,7 +189,7 @@ async function checkEngineStatus(targetBase = null) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
     const res = await fetch(`${base}/api/status`, { signal: controller.signal });
     clearTimeout(timeoutId);
 
@@ -479,7 +479,7 @@ async function analyzeMedia() {
 
       try {
         const controller = new AbortController();
-        const timeoutMs = currentBase.includes('localhost') ? 10000 : (attempt === 1 ? 14000 : 25000);
+        const timeoutMs = currentBase.includes('localhost') ? 10000 : (attempt === 1 ? 28000 : 38000);
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
         const res = await fetch(`${currentBase}/api/info`, {
