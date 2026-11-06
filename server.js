@@ -225,6 +225,68 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// Diagnostic endpoint to inspect cloud extractor performance directly
+app.get('/api/test-ytdlp', (req, res) => {
+  const targetUrl = req.query.url || 'https://www.youtube.com/watch?v=ba7rRfKIHxU';
+  const client = req.query.client || '';
+  const useCookies = req.query.cookies === '1';
+
+  const args = [
+    '--dump-single-json',
+    '--no-warnings',
+    '--no-playlist',
+    '--no-check-certificates',
+    '--socket-timeout', '10'
+  ];
+
+  if (client) {
+    args.push('--extractor-args', `youtube:player_client=${client}`);
+  }
+  if (useCookies && fs.existsSync(COOKIES_PATH)) {
+    args.push('--cookies', COOKIES_PATH);
+  }
+  args.push(targetUrl);
+
+  const start = Date.now();
+  const ytdlp = spawn('yt-dlp', args, { windowsHide: true });
+  let stdoutData = '';
+  let stderrData = '';
+  let settled = false;
+
+  const timer = setTimeout(() => {
+    if (!settled) {
+      settled = true;
+      try { ytdlp.kill('SIGKILL'); } catch (e) {}
+      res.json({ elapsed: Date.now() - start, error: 'Timed out after 18s', stderr: stderrData.slice(0, 500) });
+    }
+  }, 18000);
+
+  ytdlp.stdout.on('data', (d) => { stdoutData += d.toString(); });
+  ytdlp.stderr.on('data', (d) => { stderrData += d.toString(); });
+
+  ytdlp.on('close', (code) => {
+    clearTimeout(timer);
+    if (!settled) {
+      settled = true;
+      let title = null;
+      let formats = 0;
+      try {
+        const d = JSON.parse(stdoutData);
+        title = d.title;
+        formats = d.formats ? d.formats.length : 0;
+      } catch (e) {}
+      res.json({
+        elapsed: Date.now() - start,
+        code,
+        title,
+        formats,
+        stdoutLength: stdoutData.length,
+        stderr: stderrData.slice(0, 800)
+      });
+    }
+  });
+});
+
 // API 2: Analyze URL & Fetch Video Metadata + Quality Options
 function runProbe(targetUrl, tier = 0) {
   return new Promise((resolve) => {
