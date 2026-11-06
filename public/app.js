@@ -97,6 +97,14 @@ const localModeStatusSub = document.getElementById('localModeStatusSub');
 const checkLocalhostBtn = document.getElementById('checkLocalhostBtn');
 const downloadLauncherBatBtn = document.getElementById('downloadLauncherBatBtn');
 
+// Mobile Bottom Navigation Bar Elements
+const mobNavHome = document.getElementById('mobNavHome');
+const mobNavPaste = document.getElementById('mobNavPaste');
+const mobNavPcMode = document.getElementById('mobNavPcMode');
+const mobNavHistory = document.getElementById('mobNavHistory');
+const mobNavServer = document.getElementById('mobNavServer');
+const mobHistoryBadge = document.getElementById('mobHistoryBadge');
+
 // Helper to get active API Base URL (Supports user selection > config default > localhost)
 function getApiBase() {
   const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -478,6 +486,68 @@ function setupEventListeners() {
       }
     });
   }
+
+  // Mobile Bottom Navigation Bar Actions
+  if (mobNavHome) {
+    mobNavHome.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      urlInput.focus();
+      setActiveMobNav(mobNavHome);
+    });
+  }
+
+  if (mobNavPaste) {
+    mobNavPaste.addEventListener('click', async () => {
+      setActiveMobNav(mobNavPaste);
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const text = await navigator.clipboard.readText();
+          if (text && text.trim()) {
+            urlInput.value = text.trim();
+            handleUrlInput();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast('📋 Link pasted from clipboard!', 'success');
+            setTimeout(() => {
+              if (analyzeBtn) analyzeBtn.click();
+            }, 250);
+          } else {
+            urlInput.focus();
+          }
+        } else {
+          urlInput.focus();
+        }
+      } catch (err) {
+        urlInput.focus();
+      }
+      setTimeout(() => setActiveMobNav(mobNavHome), 800);
+    });
+  }
+
+  if (mobNavPcMode) {
+    mobNavPcMode.addEventListener('click', () => {
+      setActiveMobNav(mobNavPcMode);
+      openLocalEngineModal();
+    });
+  }
+
+  if (mobNavHistory) {
+    mobNavHistory.addEventListener('click', () => {
+      setActiveMobNav(mobNavHistory);
+      openHistoryDrawer();
+    });
+  }
+
+  if (mobNavServer) {
+    mobNavServer.addEventListener('click', () => {
+      setActiveMobNav(mobNavServer);
+      openServerSettings();
+    });
+  }
+}
+
+function setActiveMobNav(activeBtn) {
+  document.querySelectorAll('.mobile-nav-item').forEach(btn => btn.classList.remove('active'));
+  if (activeBtn) activeBtn.classList.add('active');
 }
 
 // 1-Click Local Engine Modal Control Functions
@@ -492,6 +562,7 @@ function openLocalEngineModal() {
 
 function closeLocalEngineModal() {
   if (localEngineOverlay) localEngineOverlay.classList.add('hidden');
+  if (mobNavHome) setActiveMobNav(mobNavHome);
 }
 
 // Server Modal Control Functions
@@ -505,6 +576,7 @@ function openServerSettings() {
 
 function closeServerSettings() {
   if (serverSettingsOverlay) serverSettingsOverlay.classList.add('hidden');
+  if (mobNavHome) setActiveMobNav(mobNavHome);
 }
 
 function switchToBackend(url) {
@@ -977,7 +1049,8 @@ function saveToHistory(item) {
 }
 
 function updateHistoryUI() {
-  historyCount.textContent = state.history.length;
+  if (historyCount) historyCount.textContent = state.history.length;
+  if (mobHistoryBadge) mobHistoryBadge.textContent = state.history.length;
   historyList.innerHTML = '';
 
   if (state.history.length === 0) {
@@ -1011,6 +1084,7 @@ function openHistoryDrawer() {
 
 function closeHistoryDrawer() {
   historyDrawer.classList.add('hidden');
+  if (mobNavHome) setActiveMobNav(mobNavHome);
 }
 
 // ==========================================================================

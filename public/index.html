@@ -2,9 +2,15 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>ToolBox — All Useful Tools in One Place | Universal Downloader</title>
   <meta name="description" content="ToolBox — All Useful Tools in One Place. Download videos and audio in ultra-high quality from YouTube, Instagram, TikTok, Facebook, Twitter/X, and 1000+ platforms with zero quality loss.">
+  <meta name="theme-color" content="#2563EB" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#07090E" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ToolBox PRO">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -723,6 +729,45 @@
       </div>
     </div>
   </div>
+
+  <!-- App-Like Mobile Bottom Navigation Bar (Visible on mobile screens) -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile Navigation">
+    <button type="button" class="mobile-nav-item active" id="mobNavHome">
+      <div class="mob-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      </div>
+      <span>Download</span>
+    </button>
+
+    <button type="button" class="mobile-nav-item" id="mobNavPaste">
+      <div class="mob-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </div>
+      <span>Paste</span>
+    </button>
+
+    <button type="button" class="mobile-nav-item" id="mobNavPcMode">
+      <div class="mob-icon-wrap flash">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      </div>
+      <span>PC 4K</span>
+    </button>
+
+    <button type="button" class="mobile-nav-item" id="mobNavHistory">
+      <div class="mob-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span class="mob-badge" id="mobHistoryBadge">0</span>
+      </div>
+      <span>History</span>
+    </button>
+
+    <button type="button" class="mobile-nav-item" id="mobNavServer">
+      <div class="mob-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+      </div>
+      <span>Server</span>
+    </button>
+  </nav>
 
   <!-- Firebase v10 Compat SDKs (Zero Build, Pure CDN Integration) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
