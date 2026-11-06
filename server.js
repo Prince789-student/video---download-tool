@@ -233,7 +233,7 @@ app.get('/api/test-ytdlp', (req, res) => {
 
   const args = [
     '--dump-single-json',
-    '--no-warnings',
+    '-v',
     '--no-playlist',
     '--no-check-certificates',
     '--socket-timeout', '10'
@@ -241,6 +241,9 @@ app.get('/api/test-ytdlp', (req, res) => {
 
   if (client) {
     args.push('--extractor-args', `youtube:player_client=${client}`);
+  }
+  if (req.query.extra) {
+    args.push(...req.query.extra.split(' '));
   }
   if (useCookies && fs.existsSync(COOKIES_PATH)) {
     args.push('--cookies', COOKIES_PATH);
