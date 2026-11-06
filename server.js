@@ -83,30 +83,41 @@ if (process.env.YOUTUBE_COOKIES && !fs.existsSync(COOKIES_PATH)) {
   }
 }
 
-function getYtDlpBaseArgs() {
+function getYtDlpBaseArgs(targetUrl = '') {
+  const isCloud = !!(process.env.RENDER || process.env.RENDER_EXTERNAL_URL || process.env.NODE_ENV === 'production');
+  const isYouTube = typeof targetUrl === 'string' && (targetUrl.includes('youtube.com') || targetUrl.includes('youtu.be'));
+
   const args = [
     '--no-warnings',
     '--no-playlist',
     '--no-check-certificates',
-    '--socket-timeout', '15'
+    '--socket-timeout', '18'
   ];
+
+  // In cloud environment (Render), DO NOT pass residential cookies to YouTube
+  // because Google security blocks residential cookies from datacenter IPs!
   if (fs.existsSync(COOKIES_PATH)) {
     try {
       if (fs.statSync(COOKIES_PATH).size > 10) {
-        args.push('--cookies', COOKIES_PATH);
+        if (!isCloud || !isYouTube) {
+          args.push('--cookies', COOKIES_PATH);
+        }
       }
     } catch (e) {}
   }
-  if (denoExecutable) {
+
+  // Deno JS challenge solver is only needed on PC local engine
+  // Android & iOS clients use protobuf without JS runtime requirements
+  if (denoExecutable && !isCloud) {
     args.push('--js-runtimes', `deno:${denoExecutable}`);
   }
   return args;
 }
 
-// Android/iOS/TV client rotation bypasses bot checks & 403 on YouTube
-const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android,web'];
-const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=ios,tv,web'];
-const RETRY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=tv_embedded,android_vr,web'];
+// Android & iOS mobile clients bypass YouTube bot checks on cloud datacenter IPs
+const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android'];
+const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=ios'];
+const RETRY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=mweb,tv'];
 
 // In-memory job tracker for real-time progress
 const jobs = new Map();
@@ -221,7 +232,7 @@ function runProbe(targetUrl, tier = 0) {
     if (tier === 1) extractorArgs = FALLBACK_EXTRACTOR_ARGS;
     if (tier === 2) extractorArgs = RETRY_EXTRACTOR_ARGS;
 
-    const baseArgs = getYtDlpBaseArgs();
+    const baseArgs = getYtDlpBaseArgs(targetUrl);
 
     const args = [
       '--dump-single-json',
@@ -235,8 +246,8 @@ function runProbe(targetUrl, tier = 0) {
     let stderrData = '';
     let settled = false;
 
-    // Timeout: 15s for tier 0, 10s for tier 1/2
-    const timeoutMs = tier === 0 ? 15000 : 10000;
+    // Timeout: 22s for tier 0, 16s for tier 1/2
+    const timeoutMs = tier === 0 ? 22000 : 16000;
     const timer = setTimeout(() => {
       if (!settled) {
         settled = true;
@@ -484,7 +495,7 @@ app.post('/api/start-download', (req, res) => {
   // Prepare arguments for yt-dlp
   const useFallbackClient = req.body.usedFallback || (formatSpec && String(formatSpec).trim() === '18');
   const extractorArgs = useFallbackClient ? FALLBACK_EXTRACTOR_ARGS : PRIMARY_EXTRACTOR_ARGS;
-  const baseArgs = getYtDlpBaseArgs();
+  const baseArgs = getYtDlpBaseArgs(url);
 
   const args = [
     '--newline',
@@ -638,6 +649,67 @@ app.get('/api/file/:jobId', (req, res) => {
       res.status(500).send('Error streaming download file.');
     }
   });
+});
+
+// API 5.5: 1-Click Local Engine Launcher Generator for Any PC User
+app.get('/api/download-launcher', (req, res) => {
+  const batContent = `@echo off
+title ToolBox Pro - Local Engine (High-Speed Mode)
+color 0b
+echo ========================================================
+echo   Starting ToolBox Pro Local Engine
+echo   Lossless 4K, 1080p, 720p & 320kbps MP3 Extractor
+echo ========================================================
+echo.
+
+:: 1. Check if Node.js is installed
+where node >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+  echo [Notice] Node.js is required to run the ultra-fast local engine.
+  echo Opening Node.js download page in your browser...
+  start https://nodejs.org/en/download
+  echo Please install Node.js and run this script again!
+  pause
+  exit /b 1
+)
+
+:: 2. Check if local files exist, if not fetch them automatically
+if not exist "server.js" (
+  echo Setting up local downloader engine files...
+  curl -sL https://raw.githubusercontent.com/Prince789-student/video---download-tool/main/server.js -o server.js
+  curl -sL https://raw.githubusercontent.com/Prince789-student/video---download-tool/main/package.json -o package.json
+  if not exist "public" mkdir public
+  curl -sL https://raw.githubusercontent.com/Prince789-student/video---download-tool/main/public/index.html -o public/index.html
+  curl -sL https://raw.githubusercontent.com/Prince789-student/video---download-tool/main/public/app.js -o public/app.js
+  curl -sL https://raw.githubusercontent.com/Prince789-student/video---download-tool/main/public/style.css -o public/style.css
+  curl -sL https://raw.githubusercontent.com/Prince789-student/video---download-tool/main/public/config.js -o public/config.js
+  curl -sL https://raw.githubusercontent.com/Prince789-student/video---download-tool/main/public/firebase-config.js -o public/firebase-config.js
+  call npm install --omit=dev
+)
+
+:: 3. Check for yt-dlp
+where yt-dlp >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+  if not exist "yt-dlp.exe" (
+    echo [Download] Downloading standalone yt-dlp.exe engine...
+    curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o yt-dlp.exe
+  )
+  set "PATH=%CD%;%PATH%"
+)
+
+echo.
+echo ========================================================
+echo   Local Engine is LIVE on http://localhost:4000
+echo   Your browser will now connect with zero restrictions!
+echo ========================================================
+start /b "" cmd /c "timeout /t 2 /nobreak >nul && start http://localhost:4000"
+node server.js
+pause
+`;
+
+  res.setHeader('Content-Disposition', 'attachment; filename="ToolBox-Local-Engine.bat"');
+  res.setHeader('Content-Type', 'application/x-bat');
+  res.send(batContent);
 });
 
 // Persistent Data Directory

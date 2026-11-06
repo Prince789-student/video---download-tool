@@ -86,6 +86,17 @@ const backendUrlInput = document.getElementById('backendUrlInput');
 const saveBackendBtn = document.getElementById('saveBackendBtn');
 const resetBackendBtn = document.getElementById('resetBackendBtn');
 
+// 1-Click Local Engine Helper Elements
+const openLocalEngineModalBtn = document.getElementById('openLocalEngineModalBtn');
+const localEngineOverlay = document.getElementById('localEngineOverlay');
+const closeLocalEngineModalBtn = document.getElementById('closeLocalEngineModalBtn');
+const tabCloudMode = document.getElementById('tabCloudMode');
+const tabLocalMode = document.getElementById('tabLocalMode');
+const cloudModeStatusSub = document.getElementById('cloudModeStatusSub');
+const localModeStatusSub = document.getElementById('localModeStatusSub');
+const checkLocalhostBtn = document.getElementById('checkLocalhostBtn');
+const downloadLauncherBatBtn = document.getElementById('downloadLauncherBatBtn');
+
 // Helper to get active API Base URL (Supports user selection > config default > localhost)
 function getApiBase() {
   const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -250,13 +261,34 @@ function updateEngineUI(base, isOnline, latency, data) {
 
   if (engineStatusText && engineStatusBadge) {
     if (isOnline) {
-      engineStatusText.textContent = isLocal ? 'Local Engine (Fast)' : 'Online';
+      engineStatusText.textContent = isLocal ? 'Local Engine (Fast ⚡)' : 'Cloud Server (Online)';
       engineStatusBadge.classList.remove('offline');
       engineStatusBadge.title = `Connected to ${base} (${latency}ms) — Click to configure`;
     } else {
       engineStatusText.textContent = 'Server Offline';
       engineStatusBadge.classList.add('offline');
       engineStatusBadge.title = `Cannot reach backend at ${base} — Click to switch or resume`;
+    }
+  }
+
+  // Update Dual Mode Switcher Tabs
+  if (tabCloudMode && tabLocalMode) {
+    if (isLocal && isOnline) {
+      tabLocalMode.classList.add('active');
+      tabCloudMode.classList.remove('active');
+      if (localModeStatusSub) {
+        localModeStatusSub.textContent = 'Active (Ultra 4K Speed ⚡)';
+        localModeStatusSub.style.color = '#10B981';
+      }
+      if (cloudModeStatusSub) cloudModeStatusSub.textContent = 'Click to switch to Cloud';
+    } else {
+      tabCloudMode.classList.add('active');
+      tabLocalMode.classList.remove('active');
+      if (cloudModeStatusSub) cloudModeStatusSub.textContent = isOnline ? 'Online • All Devices' : 'Connecting...';
+      if (localModeStatusSub) {
+        localModeStatusSub.textContent = 'Click to Run on PC (4K/8K)';
+        localModeStatusSub.style.color = 'var(--text-muted)';
+      }
     }
   }
 
@@ -393,6 +425,73 @@ function setupEventListeners() {
       closeServerSettings();
     });
   }
+
+  // 1-Click Local Engine Modal Listeners
+  if (openLocalEngineModalBtn) {
+    openLocalEngineModalBtn.addEventListener('click', openLocalEngineModal);
+  }
+  if (closeLocalEngineModalBtn) {
+    closeLocalEngineModalBtn.addEventListener('click', closeLocalEngineModal);
+  }
+  if (localEngineOverlay) {
+    localEngineOverlay.addEventListener('click', (e) => {
+      if (e.target === localEngineOverlay) closeLocalEngineModal();
+    });
+  }
+
+  // Dual Mode Switcher Tabs
+  if (tabCloudMode) {
+    tabCloudMode.addEventListener('click', () => {
+      switchToBackend(window.DEFAULT_RENDER_URL || 'https://video-download-tool-9u4x.onrender.com');
+    });
+  }
+  if (tabLocalMode) {
+    tabLocalMode.addEventListener('click', async () => {
+      try {
+        const probe = await fetch('http://localhost:4000/api/status', { signal: AbortSignal.timeout(1000) });
+        if (probe.ok) {
+          switchToBackend('http://localhost:4000');
+          return;
+        }
+      } catch (e) {}
+      openLocalEngineModal();
+    });
+  }
+
+  // Check Localhost Button in Modal
+  if (checkLocalhostBtn) {
+    checkLocalhostBtn.addEventListener('click', async () => {
+      checkLocalhostBtn.textContent = '🔄 Checking localhost:4000...';
+      try {
+        const res = await fetch('http://localhost:4000/api/status', { signal: AbortSignal.timeout(1800) });
+        if (res.ok) {
+          switchToBackend('http://localhost:4000');
+          closeLocalEngineModal();
+          alert('⚡ Connected successfully to Local Engine on localhost:4000!');
+        } else {
+          alert('Local engine responded with error. Please ensure ToolBox-Local-Engine.bat is running.');
+        }
+      } catch (err) {
+        alert('Could not connect to localhost:4000.\n\nPlease double-click "ToolBox-Local-Engine.bat" to launch it on your PC first!');
+      } finally {
+        checkLocalhostBtn.textContent = '🔄 Check Localhost Connection (localhost:4000)';
+      }
+    });
+  }
+}
+
+// 1-Click Local Engine Modal Control Functions
+function openLocalEngineModal() {
+  if (localEngineOverlay) {
+    if (downloadLauncherBatBtn) {
+      downloadLauncherBatBtn.href = `${getApiBase()}/api/download-launcher`;
+    }
+    localEngineOverlay.classList.remove('hidden');
+  }
+}
+
+function closeLocalEngineModal() {
+  if (localEngineOverlay) localEngineOverlay.classList.add('hidden');
 }
 
 // Server Modal Control Functions

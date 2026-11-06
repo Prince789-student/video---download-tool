@@ -2161,3 +2161,97 @@ body {
 .link-btn:hover {
   filter: brightness(1.2);
 }
+
+/* ==========================================================================
+   Dual Mode Engine Switcher & 1-Click Local Engine Helper
+   ========================================================================== */
+.engine-mode-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 1.25rem auto 1.25rem;
+  max-width: 480px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.engine-mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.engine-mode-tab:hover {
+  background: var(--bg-surface-hover);
+}
+
+.engine-mode-tab.active {
+  background: var(--bg-elevated);
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.engine-mode-tab .mode-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.engine-mode-tab .mode-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.engine-mode-tab .mode-text strong {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.engine-mode-tab .mode-text small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.pc-engine-nav-btn {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.pc-engine-nav-btn:hover {
+  background: rgba(245, 158, 11, 0.2) !important;
+  border-color: #F59E0B !important;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 580px) {
+  .pc-engine-nav-btn span:last-child {
+    display: none;
+  }
+  .engine-mode-switcher {
+    max-width: 100%;
+    margin: 1rem 0;
+  }
+  .engine-mode-tab {
+    padding: 6px 10px;
+  }
+}
