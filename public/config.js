@@ -9,16 +9,18 @@ window.DEFAULT_RENDER_URL = "https://video-download-tool-9u4x.onrender.com";
 window.LOCAL_SERVER_URL = "http://localhost:4000";
 
 const hostname = window.location.hostname;
+const protocol = window.location.protocol;
 const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
+const isFileProtocol = protocol === 'file:';
 const isOnRender = hostname.endsWith('onrender.com');
 
-// 1. If opened directly on Render, use same origin
-// 2. If opened on localhost, use localhost:4000
-// 3. If opened on Vercel or any other domain, use the new Render backend
-if (isOnRender) {
-  window.API_BASE_URL = window.location.origin;
-} else if (isLocalHost) {
+// 1. If running locally (localhost or opened via file://), default to Local PC Engine (fast & lossless)
+// 2. If opened directly on Render, use same origin
+// 3. If opened on Vercel or custom domain, default to cloud backend
+if (isLocalHost || isFileProtocol) {
   window.API_BASE_URL = window.LOCAL_SERVER_URL;
+} else if (isOnRender) {
+  window.API_BASE_URL = window.location.origin;
 } else {
   window.API_BASE_URL = window.DEFAULT_RENDER_URL;
 }

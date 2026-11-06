@@ -88,15 +88,28 @@ const resetBackendBtn = document.getElementById('resetBackendBtn');
 
 // Helper to get active API Base URL (Supports user selection > config default > localhost)
 function getApiBase() {
+  const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const isFile = window.location.protocol === 'file:';
+
   const stored = localStorage.getItem('omnistream_backend_url');
   if (stored && stored.trim()) {
     // Purge old dead m694 URL from localStorage if present
     if (stored.includes('video-download-tool-m694') || stored.includes('m694')) {
       localStorage.removeItem('omnistream_backend_url');
     } else {
+      // If user is accessing via localhost, don't let stale remote Render URL override localhost
+      if (isLocalHost && stored.includes('onrender.com')) {
+        localStorage.removeItem('omnistream_backend_url');
+        return window.LOCAL_SERVER_URL || 'http://localhost:4000';
+      }
       return stored.trim().replace(/\/+$/, '');
     }
   }
+
+  if (isLocalHost || isFile) {
+    return window.LOCAL_SERVER_URL || 'http://localhost:4000';
+  }
+
   if (typeof window.API_BASE_URL === 'string' && window.API_BASE_URL.trim()) {
     return window.API_BASE_URL.trim().replace(/\/+$/, '');
   }
@@ -182,14 +195,15 @@ function updatePlatformBadge() {
 
 // Check Backend Engine Status & Auto-Detect Local PC Engine
 async function checkEngineStatus(targetBase = null) {
-  const base = targetBase || getApiBase();
+  let base = targetBase || getApiBase();
   const startTime = Date.now();
   let isOnline = false;
   let statusData = null;
 
+  // 1. First probe selected base
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(`${base}/api/status`, { signal: controller.signal });
     clearTimeout(timeoutId);
 
@@ -203,8 +217,9 @@ async function checkEngineStatus(targetBase = null) {
     isOnline = false;
   }
 
-  // If configured base failed AND it's not localhost, check if local PC engine (start.bat) is running!
-  if (!isOnline && !base.includes('localhost') && !base.includes('127.0.0.1')) {
+  // 2. If active base is not local, check if Local PC Engine (start.bat) is running!
+  // Local PC Engine always provides superior speed and bypasses cloud restrictions
+  if (!base.includes('localhost') && !base.includes('127.0.0.1')) {
     try {
       const localController = new AbortController();
       const localTimeout = setTimeout(() => localController.abort(), 1200);
@@ -213,9 +228,11 @@ async function checkEngineStatus(targetBase = null) {
       if (localRes.ok) {
         const localData = await localRes.json();
         if (localData.status === 'online') {
-          console.log('[Engine] Auto-detected active Local PC Engine at http://localhost:4000');
+          console.log('[Engine] Auto-connected to Local PC Engine at http://localhost:4000');
+          base = 'http://localhost:4000';
+          isOnline = true;
+          statusData = localData;
           localStorage.setItem('omnistream_backend_url', 'http://localhost:4000');
-          return checkEngineStatus('http://localhost:4000');
         }
       }
     } catch (e) {
@@ -514,14 +531,19 @@ async function analyzeMedia() {
         break; // Successfully received data!
       } catch (reqErr) {
         if (isRenderSuspended) break;
-        if (attempt === maxRetries) {
-          // If cloud failed, check if local engine is running as auto-fallback!
-          if (!currentBase.includes('localhost')) {
-            try {
-              fetchBtn.querySelector('.btn-text').textContent = 'Connecting to Local Engine...';
-              const localProbe = await fetch('http://localhost:4000/api/status', { signal: AbortSignal.timeout(1500) });
-              if (localProbe.ok) {
+
+        // Auto-failover immediately if cloud failed and local engine is running
+        if (!currentBase.includes('localhost')) {
+          try {
+            fetchBtn.querySelector('.btn-text').textContent = 'Checking Local Engine...';
+            const localProbe = await fetch('http://localhost:4000/api/status', { signal: AbortSignal.timeout(1200) });
+            if (localProbe.ok) {
+              const localProbeData = await localProbe.json();
+              if (localProbeData.status === 'online') {
+                console.log('[Failover] Cloud failed, auto-switched to active Local Engine');
                 switchToBackend('http://localhost:4000');
+                currentBase = 'http://localhost:4000';
+                fetchBtn.querySelector('.btn-text').textContent = 'Analyzing via Local Engine...';
                 const localRes = await fetch('http://localhost:4000/api/info', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -532,14 +554,17 @@ async function analyzeMedia() {
                   break;
                 }
               }
-            } catch (e) {
-              // Local not available
             }
+          } catch (e) {
+            // Local not available
           }
+        }
+
+        if (attempt === maxRetries) {
           throw reqErr;
         }
-        // Wait 3.5s before retrying cold start
-        await new Promise(r => setTimeout(r, 3500));
+        // Wait 2s before retrying
+        await new Promise(r => setTimeout(r, 2000));
       }
     }
 
@@ -639,7 +664,9 @@ function renderMediaResult(media) {
   // Toggle Instant Direct CDN Download button if direct URL is available
   const directFastDownloadBtn = document.getElementById('directFastDownloadBtn');
   if (directFastDownloadBtn) {
-    if (media.directUrl && typeof media.directUrl === 'string' && media.directUrl.startsWith('http')) {
+    const isLocalServer = getApiBase().includes('localhost') || getApiBase().includes('127.0.0.1');
+    const canUseDirect = media.directUrl && (media.platform !== 'YouTube' || isLocalServer);
+    if (canUseDirect && typeof media.directUrl === 'string' && media.directUrl.startsWith('http')) {
       directFastDownloadBtn.href = media.directUrl;
       directFastDownloadBtn.classList.remove('hidden');
     } else {

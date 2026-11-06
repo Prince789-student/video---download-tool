@@ -55,14 +55,18 @@ try {
 try {
   const curVer = execSync('yt-dlp --version', { encoding: 'utf8' }).trim();
   console.log('[Startup] Detected yt-dlp version:', curVer);
-  if (curVer.includes('2026.08') || curVer.includes('2024') || curVer.includes('2025')) {
+  if (curVer.includes('2024') || curVer.includes('2025') || curVer.includes('2026.08')) {
     console.log('[Startup] Outdated yt-dlp detected! Upgrading to latest nightly build...');
     try {
-      execSync('curl -sL https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp', { stdio: 'inherit' });
+      if (process.platform === 'win32') {
+        execSync('yt-dlp -U', { stdio: 'inherit' });
+      } else {
+        execSync('curl -sL https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp', { stdio: 'inherit' });
+      }
       const newVer = execSync('yt-dlp --version', { encoding: 'utf8' }).trim();
       console.log('[Startup] Successfully upgraded yt-dlp to nightly version:', newVer);
     } catch (curlErr) {
-      console.warn('[Startup] Direct curl upgrade failed:', curlErr.message);
+      console.warn('[Startup] yt-dlp upgrade warning:', curlErr.message);
     }
   }
 } catch (e) {
@@ -83,10 +87,15 @@ function getYtDlpBaseArgs() {
   const args = [
     '--no-warnings',
     '--no-playlist',
-    '--no-check-certificates'
+    '--no-check-certificates',
+    '--socket-timeout', '15'
   ];
   if (fs.existsSync(COOKIES_PATH)) {
-    args.push('--cookies', COOKIES_PATH);
+    try {
+      if (fs.statSync(COOKIES_PATH).size > 10) {
+        args.push('--cookies', COOKIES_PATH);
+      }
+    } catch (e) {}
   }
   if (denoExecutable) {
     args.push('--js-runtimes', `deno:${denoExecutable}`);
@@ -94,9 +103,10 @@ function getYtDlpBaseArgs() {
   return args;
 }
 
-const PRIMARY_EXTRACTOR_ARGS = []; // Default intelligent client rotation (tv_samsung, visionos, web)
-const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=tv,android'];
-const RETRY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android_vr,web'];
+// Android/iOS/TV client rotation bypasses bot checks & 403 on YouTube
+const PRIMARY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=android,web'];
+const FALLBACK_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=ios,tv,web'];
+const RETRY_EXTRACTOR_ARGS = ['--extractor-args', 'youtube:player_client=tv_embedded,android_vr,web'];
 
 // In-memory job tracker for real-time progress
 const jobs = new Map();
@@ -211,12 +221,7 @@ function runProbe(targetUrl, tier = 0) {
     if (tier === 1) extractorArgs = FALLBACK_EXTRACTOR_ARGS;
     if (tier === 2) extractorArgs = RETRY_EXTRACTOR_ARGS;
 
-    const baseArgs = tier > 0 ? [
-      '--no-warnings',
-      '--no-playlist',
-      '--no-check-certificates',
-      ...(denoExecutable ? ['--js-runtimes', `deno:${denoExecutable}`] : [])
-    ] : getYtDlpBaseArgs();
+    const baseArgs = getYtDlpBaseArgs();
 
     const args = [
       '--dump-single-json',
@@ -230,14 +235,15 @@ function runProbe(targetUrl, tier = 0) {
     let stderrData = '';
     let settled = false;
 
-    // Hard timeout after 22 seconds to prevent probe hang
+    // Timeout: 15s for tier 0, 10s for tier 1/2
+    const timeoutMs = tier === 0 ? 15000 : 10000;
     const timer = setTimeout(() => {
       if (!settled) {
         settled = true;
         try { ytdlp.kill('SIGKILL'); } catch (e) {}
-        resolve({ code: -1, stdoutData: '', stderrData: 'Probe timed out after 22s', tier });
+        resolve({ code: -1, stdoutData: '', stderrData: `Probe timed out after ${timeoutMs / 1000}s`, tier });
       }
-    }, 22000);
+    }, timeoutMs);
 
     ytdlp.stdout.on('data', (d) => { stdoutData += d.toString(); });
     ytdlp.stderr.on('data', (d) => { stderrData += d.toString(); });
@@ -286,8 +292,14 @@ app.post('/api/info', async (req, res) => {
       userFriendlyError = 'This video is private or restricted by the creator.';
     } else if (stderrData.includes('Sign in to confirm you’re not a bot') || stderrData.includes('Sign in to confirm')) {
       userFriendlyError = 'This video requires YouTube account login or has bot verification enabled.';
+    } else if (stderrData.includes('No video could be found') || stderrData.includes('No video')) {
+      userFriendlyError = 'No video could be found in this post. Please verify the post contains a video clip.';
+    } else if (stderrData.includes('Instagram sent an empty media response') || stderrData.includes('login required')) {
+      userFriendlyError = 'This Instagram post is private or requires logging in.';
     } else if (stderrData.includes('404') || stderrData.includes('Not Found')) {
       userFriendlyError = 'Media not found. The post or video might have been deleted.';
+    } else if (stderrData.includes('timed out')) {
+      userFriendlyError = 'Connection to the media host timed out. Please try again.';
     }
     return res.status(422).json({ error: userFriendlyError, raw: stderrData.slice(0, 300) });
   }
@@ -472,15 +484,9 @@ app.post('/api/start-download', (req, res) => {
   // Prepare arguments for yt-dlp
   const useFallbackClient = req.body.usedFallback || (formatSpec && String(formatSpec).trim() === '18');
   const extractorArgs = useFallbackClient ? FALLBACK_EXTRACTOR_ARGS : PRIMARY_EXTRACTOR_ARGS;
-  const baseArgs = useFallbackClient ? [
-    '--no-warnings',
-    '--no-playlist',
-    '--no-check-certificates',
-    ...(denoExecutable ? ['--js-runtimes', `deno:${denoExecutable}`] : [])
-  ] : getYtDlpBaseArgs();
+  const baseArgs = getYtDlpBaseArgs();
 
   const args = [
-    '--no-playlist',
     '--newline',
     '--progress',
     ...baseArgs,
