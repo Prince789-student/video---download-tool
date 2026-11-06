@@ -487,6 +487,15 @@ function setupEventListeners() {
     });
   }
 
+  const useCloudInsteadBtn = document.getElementById('useCloudInsteadBtn');
+  if (useCloudInsteadBtn) {
+    useCloudInsteadBtn.addEventListener('click', () => {
+      switchToBackend(window.DEFAULT_RENDER_URL || 'https://video-download-tool-9u4x.onrender.com');
+      closeLocalEngineModal();
+      showToast('☁️ Free Cloud Mode Activated', 'success');
+    });
+  }
+
   // Mobile Bottom Navigation Bar Actions
   if (mobNavHome) {
     mobNavHome.addEventListener('click', () => {

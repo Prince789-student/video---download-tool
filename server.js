@@ -727,12 +727,16 @@ echo.
 :: 1. Check if Node.js is installed
 where node >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-  echo [Notice] Node.js is required to run the ultra-fast local engine.
-  echo Opening Node.js download page in your browser...
-  start https://nodejs.org/en/download
-  echo Please install Node.js and run this script again!
-  pause
-  exit /b 1
+  echo [1/3] Node.js not found. Attempting automatic install via Windows Package Manager...
+  winget install OpenJS.NodeJS.LTS -e --silent --accept-package-agreements --accept-source-agreements >nul 2>nul
+  where node >nul 2>nul
+  if %ERRORLEVEL% NEQ 0 (
+    echo [Notice] Opening Node.js download page in your browser...
+    start https://nodejs.org/en/download
+    echo Please run this file again after installation completes!
+    pause
+    exit /b 1
+  )
 )
 
 :: 2. Check if local files exist, if not fetch them automatically
