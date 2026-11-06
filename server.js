@@ -290,6 +290,160 @@ app.get('/api/test-ytdlp', (req, res) => {
   });
 });
 
+// ==========================================================================
+// Invidious Resolver: Zero-Block Cloud YouTube Metadata & Stream Extractor
+// ==========================================================================
+const INVIDIOUS_INSTANCES = [
+  'https://yt.chocolatemoo53.com',
+  'https://invidious.nerdvpn.de',
+  'https://invidious.tiekoetter.com',
+  'https://inv.nadeko.net',
+  'https://invidious.projectsegfau.lt'
+];
+
+function extractYouTubeId(url) {
+  if (!url || typeof url !== 'string') return null;
+  const clean = url.trim();
+  const patterns = [
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/watch\?.*?v=([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/
+  ];
+  for (const p of patterns) {
+    const match = clean.match(p);
+    if (match && match[1]) return match[1];
+  }
+  return null;
+}
+
+async function fetchFromInvidious(videoId) {
+  for (const instance of INVIDIOUS_INSTANCES) {
+    try {
+      const res = await fetch(`${instance}/api/v1/videos/${videoId}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        signal: AbortSignal.timeout(3500)
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data && data.title && data.adaptiveFormats && data.adaptiveFormats.length > 0) {
+        return { instance, data };
+      }
+    } catch (err) {}
+  }
+  return null;
+}
+
+function transformInvidiousToInfo(invidData, originalUrl, videoId) {
+  const d = invidData.data;
+  const af = d.adaptiveFormats || [];
+  const fsList = d.formatStreams || [];
+
+  // Audio stream
+  const audioStream = af.find(f => f.itag === '140' || (f.type && f.type.includes('audio/mp4')))
+    || af.find(f => f.type && f.type.includes('audio'));
+  const audioUrl = audioStream ? audioStream.url : null;
+
+  // Video streams
+  const targetHeights = [1080, 720, 480, 360];
+  const videoOptions = [];
+
+  // Check pre-muxed streams first
+  fsList.forEach(s => {
+    const h = parseInt(s.resolution || s.qualityLabel || '360', 10);
+    if (h && s.url) {
+      videoOptions.push({
+        id: `video_${h}`,
+        type: 'video',
+        label: `${h}p Standard Video`,
+        resolution: `${h}p`,
+        height: h,
+        badge: `${h}p`,
+        ext: 'mp4',
+        directUrl: s.url
+      });
+    }
+  });
+
+  targetHeights.forEach(targetH => {
+    if (videoOptions.some(v => v.height === targetH)) return;
+    const stream = af.find(f => f.qualityLabel && f.qualityLabel.startsWith(`${targetH}p`) && f.type && f.type.includes('video/mp4'))
+      || af.find(f => f.qualityLabel && f.qualityLabel.startsWith(`${targetH}p`));
+
+    if (stream && stream.url) {
+      videoOptions.push({
+        id: `video_${targetH}`,
+        type: 'video',
+        label: targetH >= 1080 ? `${targetH}p Full HD` : (targetH >= 720 ? `${targetH}p HD` : `${targetH}p Standard`),
+        resolution: `${targetH}p`,
+        height: targetH,
+        badge: targetH >= 1080 ? 'FHD' : (targetH >= 720 ? 'HD' : 'SD'),
+        ext: 'mp4',
+        directUrl: stream.url
+      });
+    }
+  });
+
+  const primaryVideo = videoOptions[0] || null;
+  const primaryDirectUrl = primaryVideo ? primaryVideo.directUrl : (audioUrl || null);
+
+  const audioOptions = [
+    {
+      id: 'audio_m4a',
+      type: 'audio',
+      label: 'M4A / AAC Clean Audio',
+      bitrate: '128 kbps',
+      badge: 'HQ Audio',
+      ext: 'm4a',
+      directUrl: audioUrl
+    },
+    {
+      id: 'audio_mp3',
+      type: 'audio',
+      label: 'MP3 High Quality',
+      bitrate: '320 kbps',
+      badge: 'MP3',
+      ext: 'mp3',
+      directUrl: audioUrl
+    }
+  ];
+
+  const thumb = (d.videoThumbnails && d.videoThumbnails.length > 0 && d.videoThumbnails[0].url)
+    ? d.videoThumbnails[0].url
+    : `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+  return {
+    title: d.title || 'YouTube Video',
+    thumbnail: thumb,
+    duration: formatDuration(d.lengthSeconds),
+    durationRaw: d.lengthSeconds || 0,
+    uploader: d.author || 'YouTube Creator',
+    uploaderUrl: d.authorUrl ? `https://youtube.com${d.authorUrl}` : '',
+    views: d.viewCount ? d.viewCount.toLocaleString() : null,
+    platform: 'YouTube',
+    webpageUrl: originalUrl,
+    directUrl: primaryDirectUrl,
+    options: {
+      video: videoOptions.length > 0 ? videoOptions : [
+        {
+          id: 'video_360',
+          type: 'video',
+          label: '360p Standard Video',
+          resolution: '360p',
+          height: 360,
+          badge: '360p',
+          ext: 'mp4',
+          directUrl: primaryDirectUrl
+        }
+      ],
+      audio: audioOptions
+    }
+  };
+}
+
 // API 2: Analyze URL & Fetch Video Metadata + Quality Options
 function runProbe(targetUrl, tier = 0) {
   return new Promise((resolve) => {
@@ -340,9 +494,25 @@ app.post('/api/info', async (req, res) => {
     return res.status(400).json({ error: 'Please provide a valid media URL starting with http:// or https://' });
   }
 
-  // Clean trailing parentheses, commas, or spaces from copy-paste
-  const cleanUrl = url.trim().replace(/[\)\(\,\s]+$/, '');
+  // Clean trailing parentheses, commas, brackets, or spaces from copy-paste
+  const cleanUrl = url.trim().replace(/[\)\(\,\s\>\<\;]+$/, '');
   console.log(`[Analyze] Probing URL: ${cleanUrl}`);
+
+  // Fast-Path for YouTube: Query Invidious cluster directly to bypass cloud datacenter IP blocks!
+  const ytId = extractYouTubeId(cleanUrl);
+  if (ytId) {
+    console.log(`[YouTube Fast-Path] Checking Invidious cluster for video ID: ${ytId}`);
+    try {
+      const invidRes = await fetchFromInvidious(ytId);
+      if (invidRes) {
+        console.log(`[YouTube Fast-Path] Successfully resolved via ${invidRes.instance}: ${invidRes.data.title}`);
+        const formatted = transformInvidiousToInfo(invidRes, cleanUrl, ytId);
+        return res.json(formatted);
+      }
+    } catch (invidErr) {
+      console.warn('[YouTube Fast-Path Warning]', invidErr.message);
+    }
+  }
 
   let probeResult = await runProbe(cleanUrl, 0);
 

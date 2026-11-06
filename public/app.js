@@ -664,42 +664,6 @@ async function analyzeMedia() {
     let data = null;
     let isRenderSuspended = false;
 
-    // Fast check for YouTube on Cloud
-    const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
-    const isCloud = !currentBase.includes('localhost') && !currentBase.includes('127.0.0.1');
-    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    if (isYouTube && isCloud) {
-      // Check if user already launched localhost:4000 in background
-      try {
-        const quickProbe = await fetch('http://localhost:4000/api/status', { signal: AbortSignal.timeout(600) });
-        if (quickProbe.ok) {
-          switchToBackend('http://localhost:4000');
-          currentBase = 'http://localhost:4000';
-        }
-      } catch (e) {}
-
-      // If still on cloud:
-      if (!currentBase.includes('localhost')) {
-        fetchBtn.disabled = false;
-        fetchSpinner.classList.add('hidden');
-        fetchBtn.querySelector('.btn-arrow').classList.remove('hidden');
-        fetchBtn.querySelector('.btn-text').textContent = 'Analyze Media';
-
-        if (isMobile) {
-          showError(
-            'YouTube Download Notice (Mobile)',
-            'YouTube blocks cloud datacenter extraction. To download YouTube in 4K, please open this link on your PC using the 1-Click Engine!\n\nNote: Instagram Reels, TikTok, Facebook, Twitter/X, and Reddit download directly here on mobile with zero server bandwidth!',
-            []
-          );
-        } else {
-          openLocalEngineModal();
-          showToast('⚡ Please launch the 1-Click Local Engine for YouTube 4K', 'info');
-        }
-        return;
-      }
-    }
-
     // Single-attempt probe with short timeout to prevent "Waking server" hanging
     const maxRetries = currentBase.includes('localhost') ? 1 : 2;
 
@@ -961,11 +925,12 @@ async function triggerDownload() {
   const media = state.currentMedia;
   const opt = state.selectedOption;
 
-  // Zero-Bandwidth Direct Save: For platforms with direct CDN links (Instagram, TikTok, Facebook, Twitter, Reddit, etc.)
+  // Zero-Bandwidth Direct Save: For platforms and YouTube with direct CDN stream links
   // Saves directly to the user's phone or computer without passing through Render's server!
   // This guarantees Render GB bandwidth & disk stays at 0 MB permanently!
   const isCloud = !getApiBase().includes('localhost') && !getApiBase().includes('127.0.0.1');
-  if (isCloud && media.directUrl && media.platform !== 'YouTube') {
+  const targetDirectUrl = opt.directUrl || media.directUrl;
+  if (isCloud && targetDirectUrl && typeof targetDirectUrl === 'string' && targetDirectUrl.startsWith('http')) {
     progressModalTitle.textContent = `Saving ${opt.label} Directly...`;
     progressFileName.textContent = media.title;
     progressBarFill.style.width = '100%';
@@ -977,7 +942,7 @@ async function triggerDownload() {
     progressOverlay.classList.remove('hidden');
 
     const dlLink = document.createElement('a');
-    dlLink.href = media.directUrl;
+    dlLink.href = targetDirectUrl;
     dlLink.download = `${media.title || 'download'}.${opt.ext || 'mp4'}`;
     dlLink.target = '_blank';
     dlLink.rel = 'noopener noreferrer';
