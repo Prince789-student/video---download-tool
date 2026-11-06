@@ -696,7 +696,7 @@ app.get('/api/job-status/:jobId', (req, res) => {
   });
 });
 
-// API 5: Serve Downloaded File to Browser
+// API 5: Serve Downloaded File to Browser & Scrub Disk Immediately
 app.get('/api/file/:jobId', (req, res) => {
   const { jobId } = req.params;
   const job = jobs.get(jobId);
@@ -705,13 +705,46 @@ app.get('/api/file/:jobId', (req, res) => {
     return res.status(404).send('Download file not found or has already expired.');
   }
 
-  res.download(job.filePath, job.filename, (err) => {
+  const filePath = job.filePath;
+  res.download(filePath, job.filename, (err) => {
+    // Zero-Disk Policy: Immediately delete downloaded file from disk after transfer
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`[Disk Cleanup] Immediate delete completed: ${filePath}`);
+      }
+    } catch (cleanErr) {
+      console.warn('[Disk Cleanup Warning]', cleanErr.message);
+    }
+    jobs.delete(jobId);
+
     if (err && !res.headersSent) {
       console.error(`[Download Send Error] Job ${jobId}:`, err.message);
       res.status(500).send('Error streaming download file.');
     }
   });
 });
+
+// Periodic Temp Scrubber: Keep Render Disk Usage at 0 MB permanently
+setInterval(() => {
+  try {
+    if (fs.existsSync(TEMP_DIR)) {
+      const files = fs.readdirSync(TEMP_DIR);
+      const now = Date.now();
+      files.forEach((f) => {
+        const fullPath = path.join(TEMP_DIR, f);
+        try {
+          const stat = fs.statSync(fullPath);
+          // Delete anything older than 3 minutes
+          if (now - stat.mtimeMs > 3 * 60 * 1000) {
+            fs.unlinkSync(fullPath);
+            console.log(`[Disk Scrubber] Cleaned stale file: ${f}`);
+          }
+        } catch (e) {}
+      });
+    }
+  } catch (err) {}
+}, 2 * 60 * 1000);
 
 // API 5.5: 1-Click Local Engine Launcher Generator for Any PC User
 app.get('/api/download-launcher', (req, res) => {

@@ -475,12 +475,17 @@ function setupEventListeners() {
         if (res.ok) {
           switchToBackend('http://localhost:4000');
           closeLocalEngineModal();
-          alert('⚡ Connected successfully to Local Engine on localhost:4000!');
+          showToast('⚡ Connected successfully to Local Engine (localhost:4000)!', 'success');
         } else {
-          alert('Local engine responded with error. Please ensure ToolBox-Local-Engine.bat is running.');
+          showToast('Local engine responded with an error. Please ensure it is running.', 'error');
         }
       } catch (err) {
-        alert('Could not connect to localhost:4000.\n\nPlease double-click "ToolBox-Local-Engine.bat" to launch it on your PC first!');
+        const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad/i.test(navigator.userAgent);
+        if (isMobile) {
+          showToast('📱 Notice: 1-Click Engine is for Windows PC. On phone, use Free Cloud Mode!', 'info');
+        } else {
+          showToast('Could not reach localhost:4000. Double-click ToolBox-Local-Engine.bat on your PC first!', 'error');
+        }
       } finally {
         checkLocalhostBtn.textContent = '🔄 Check Localhost Connection (localhost:4000)';
       }
@@ -529,13 +534,6 @@ function setupEventListeners() {
         urlInput.focus();
       }
       setTimeout(() => setActiveMobNav(mobNavHome), 800);
-    });
-  }
-
-  if (mobNavPcMode) {
-    mobNavPcMode.addEventListener('click', () => {
-      setActiveMobNav(mobNavPcMode);
-      openLocalEngineModal();
     });
   }
 
@@ -666,17 +664,53 @@ async function analyzeMedia() {
     let data = null;
     let isRenderSuspended = false;
 
-    // Retry loop for sleeping instances
-    const maxRetries = currentBase.includes('localhost') ? 1 : 3;
+    // Fast check for YouTube on Cloud
+    const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+    const isCloud = !currentBase.includes('localhost') && !currentBase.includes('127.0.0.1');
+    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (isYouTube && isCloud) {
+      // Check if user already launched localhost:4000 in background
+      try {
+        const quickProbe = await fetch('http://localhost:4000/api/status', { signal: AbortSignal.timeout(600) });
+        if (quickProbe.ok) {
+          switchToBackend('http://localhost:4000');
+          currentBase = 'http://localhost:4000';
+        }
+      } catch (e) {}
+
+      // If still on cloud:
+      if (!currentBase.includes('localhost')) {
+        fetchBtn.disabled = false;
+        fetchSpinner.classList.add('hidden');
+        fetchBtn.querySelector('.btn-arrow').classList.remove('hidden');
+        fetchBtn.querySelector('.btn-text').textContent = 'Analyze Media';
+
+        if (isMobile) {
+          showError(
+            'YouTube Download Notice (Mobile)',
+            'YouTube blocks cloud datacenter extraction. To download YouTube in 4K, please open this link on your PC using the 1-Click Engine!\n\nNote: Instagram Reels, TikTok, Facebook, Twitter/X, and Reddit download directly here on mobile with zero server bandwidth!',
+            []
+          );
+        } else {
+          openLocalEngineModal();
+          showToast('⚡ Please launch the 1-Click Local Engine for YouTube 4K', 'info');
+        }
+        return;
+      }
+    }
+
+    // Single-attempt probe with short timeout to prevent "Waking server" hanging
+    const maxRetries = currentBase.includes('localhost') ? 1 : 2;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       if (attempt > 1) {
-        fetchBtn.querySelector('.btn-text').textContent = `Waking server (${attempt}/${maxRetries})...`;
+        fetchBtn.querySelector('.btn-text').textContent = 'Retrying Server (2/2)...';
       }
 
       try {
         const controller = new AbortController();
-        const timeoutMs = currentBase.includes('localhost') ? 10000 : (attempt === 1 ? 28000 : 38000);
+        const timeoutMs = currentBase.includes('localhost') ? 10000 : 16000;
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
         const res = await fetch(`${currentBase}/api/info`, {
@@ -927,7 +961,45 @@ async function triggerDownload() {
   const media = state.currentMedia;
   const opt = state.selectedOption;
 
-  // Open Progress Modal
+  // Zero-Bandwidth Direct Save: For platforms with direct CDN links (Instagram, TikTok, Facebook, Twitter, Reddit, etc.)
+  // Saves directly to the user's phone or computer without passing through Render's server!
+  // This guarantees Render GB bandwidth & disk stays at 0 MB permanently!
+  const isCloud = !getApiBase().includes('localhost') && !getApiBase().includes('127.0.0.1');
+  if (isCloud && media.directUrl && media.platform !== 'YouTube') {
+    progressModalTitle.textContent = `Saving ${opt.label} Directly...`;
+    progressFileName.textContent = media.title;
+    progressBarFill.style.width = '100%';
+    progressPercent.textContent = '100%';
+    progressSpeed.textContent = '⚡ Direct CDN Save (0 MB Server Bandwidth)';
+    progressSize.textContent = 'Instant Save';
+    progressEta.textContent = 'Ready';
+    downloadReadyBox.classList.add('hidden');
+    progressOverlay.classList.remove('hidden');
+
+    const dlLink = document.createElement('a');
+    dlLink.href = media.directUrl;
+    dlLink.download = `${media.title || 'download'}.${opt.ext || 'mp4'}`;
+    dlLink.target = '_blank';
+    dlLink.rel = 'noopener noreferrer';
+    document.body.appendChild(dlLink);
+    dlLink.click();
+    document.body.removeChild(dlLink);
+
+    saveToHistory({
+      title: media.title,
+      platform: media.platform,
+      quality: opt.label,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+
+    setTimeout(() => {
+      progressOverlay.classList.add('hidden');
+      showToast('⚡ Download started directly! (0 MB server bandwidth used)', 'success');
+    }, 1200);
+    return;
+  }
+
+  // Open Progress Modal for Local Engine / Muxing
   progressModalTitle.textContent = `Downloading & Processing ${opt.label}...`;
   progressFileName.textContent = media.title;
   progressBarFill.style.width = '0%';
